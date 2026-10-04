@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AvtoBuy</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+body{background:linear-gradient(180deg,#a9b8f5,#d898cc);min-height:100vh;padding:12px 12px 100px}
+.sb{display:flex;justify-content:space-between;align-items:center;padding:6px;font-weight:700;font-size:.9rem}
+.gt{background:#fff;padding:4px 12px;border-radius:10px;color:#0a6b2e;font-size:1.05rem;font-weight:800}
+.bw{background:rgba(255,255,255,.6);border-radius:18px;padding:12px 18px;margin:0 auto 14px;max-width:540px;display:flex;justify-content:space-between}
+.vl{font-size:1.2rem;font-weight:800;color:#0a6b2e}
+.g{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 8px;max-width:540px;margin:0 auto}
+.a{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.a:active{transform:scale(.9)}
+.ic{width:60px;height:60px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:1.7rem;box-shadow:0 4px 10px rgba(0,0,0,.2)}
+.lb{font-size:.68rem;color:#1a1a1a;font-weight:500}
+.dk{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.85);padding:12px 20px;display:flex;justify-content:space-around;z-index:90;box-shadow:0 -4px 20px rgba(0,0,0,.1)}
+.di{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.2)}
+.aw{position:fixed;inset:0;background:#eef0f4;display:none;flex-direction:column;z-index:100}
+.aw.op{display:flex}
+.ah{background:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #ddd}
+.cb{background:#e74c3c;color:#fff;border:none;width:32px;height:32px;border-radius:50%;font-weight:700}
+.ah h2{flex:1;font-size:.95rem}
+.mt{background:#27ae60;color:#fff;padding:4px 10px;border-radius:12px;font-size:.75rem;font-weight:700}
+.ab{flex:1;overflow-y:auto;padding:14px}
+.ic2{background:#fff;padding:14px;border-radius:14px;margin-bottom:10px;font-size:.9rem;display:flex;justify-content:space-between}
+.emp{text-align:center;padding:40px;color:#888}
+.card{background:#fff;border-radius:14px;margin-bottom:10px;overflow:hidden}
+.card img{width:100%;height:140px;object-fit:cover}
+.card .b{padding:12px}
+.card .pr{color:#00a650;font-size:1.1rem;font-weight:800;margin-bottom:5px}
+.card .nm{font-weight:600}
+.card .y{font-size:.75rem;color:#666;margin-top:3px}
+.btn{width:100%;padding:11px;border:none;border-radius:12px;font-size:.88rem;font-weight:700;margin-top:8px;background:#00aaff;color:#fff}
+.btn.gr{background:#27ae60}
+.btn.rd{background:#e74c3c}
+.btn.bl{background:#1c3b70}
+.btn.or{background:#f5a623;color:#111}
+.btn.gy{background:#7a8b9e}
+.btn:disabled{opacity:.4}
+.toast{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.88);color:#fff;padding:12px 22px;border-radius:22px;opacity:0;transition:.3s;z-index:200;pointer-events:none;max-width:90%;text-align:center}
+.toast.sh{opacity:1}
+input.vin,select.vin{width:100%;padding:14px;border:2px solid #ddd;border-radius:12px;font-size:1rem;margin-bottom:10px;text-align:center;background:#fff}
+</style>
+</head>
+<body>
+<div class="sb">
+<span class="gt" id="gameClock">08:00</span>
+<span style="font-size:.8rem;color:#555">📅 День <b id="topDay">1</b></span>
+<span>💰 <span id="hm">200 000</span> ₽</span>
+</div>
+<div class="bw">
+<div><div style="font-size:.78rem;color:#555">💰 Баланс</div><div class="vl" id="wm">200 000 ₽</div></div>
+<div style="text-align:right"><div style="font-size:.78rem;color:#555">⭐ Рейтинг</div><div style="font-weight:700;color:#b06a00" id="rt">5.0</div></div>
+</div>
+<div class="g" id="grid"></div>
+<div class="dk">
+<div class="di" style="background:linear-gradient(145deg,#4cd964,#34a853)" onclick="callSeller()">📞</div>
+<div class="di" style="background:linear-gradient(145deg,#4a9eff,#1a7fe0)" onclick="openApp('chats')">💬</div>
+<div class="di" style="background:linear-gradient(145deg,#8e8e93,#5a5a5e)" onclick="openCamera()">📷</div>
+</div>
+<div class="aw" id="aw">
+<div class="ah">
+<button class="cb" onclick="closeApp()">✕</button>
+<h2 id="at">AvtoBuy</h2>
+<span class="mt" id="mt">200 000 ₽</span>
+</div>
+<div class="ab" id="ab"></div>
+</div>
+<div class="toast" id="toast"></div><script>
+var SM=200000,DEV='matvey55111',SAVE='avtobuy_v7';
+var S={money:SM,day:1,time:8,calOffset:0,debt:0,debtDay:0,debtOverdue:0,cars:[],garage:[],log:[],chats:[],garages:{abakan:[]},city:'abakan',bought:0,sold:0,earned:0,devMode:false,promo:{},wallpaper:'',filter:{priceMin:0,priceMax:999999999,yearMin:2000,yearMax:2025,city:'all',sort:'price-asc'},bbRecord:0,bbScore:0,rating:5.0,reviews:0,alarm:0,alarmDay:0,meeting:null,listings:[],nick:'',friends:[]};
+
+var MB=[
+{name:'Запорожец',brand:'ЗАЗ',tier:'budget',base:20000,hp:40,fuel:'бензин'},
+{name:'Ока',brand:'СеАЗ',tier:'budget',base:25000,hp:33,fuel:'бензин'},
+{name:'ВАЗ 2101',brand:'ВАЗ',tier:'budget',base:30000,hp:60,fuel:'бензин'},
+{name:'ВАЗ 2107',brand:'ВАЗ',tier:'budget',base:35000,hp:72,fuel:'бензин'},
+{name:'Москвич 2141',brand:'Москвич',tier:'budget',base:40000,hp:75,fuel:'бензин'},
+{name:'ВАЗ 2109',brand:'ВАЗ',tier:'budget',base:45000,hp:70,fuel:'бензин'},
+{name:'ГАЗ 3110',brand:'ГАЗ',tier:'budget',base:50000,hp:130,fuel:'бензин'},
+{name:'ВАЗ 2110',brand:'ВАЗ',tier:'budget',base:55000,hp:80,fuel:'бензин'},
+{name:'ВАЗ 2114',brand:'ВАЗ',tier:'budget',base:70000,hp:80,fuel:'бензин'},
+{name:'ВАЗ 2115',brand:'ВАЗ',tier:'budget',base:75000,hp:80,fuel:'бензин'},
+{name:'Daewoo Matiz',brand:'Daewoo',tier:'budget',base:80000,hp:51,fuel:'бензин'},
+{name:'Daewoo Nexia',brand:'Daewoo',tier:'budget',base:100000,hp:85,fuel:'бензин'},
+{name:'Lada Kalina',brand:'Lada',tier:'budget',base:180000,hp:98,fuel:'бензин'},
+{name:'Lada Priora',brand:'Lada',tier:'budget',base:220000,hp:106,fuel:'бензин'},
+{name:'Lada Granta',brand:'Lada',tier:'budget',base:350000,hp:106,fuel:'бензин'},
+{name:'Lada Niva',brand:'Lada',tier:'budget',base:400000,hp:83,fuel:'бензин'},
+{name:'Ford Fiesta',brand:'Ford',tier:'budget',base:450000,hp:85,fuel:'бензин'},
+{name:'Renault Logan',brand:'Renault',tier:'budget',base:500000,hp:113,fuel:'бензин'},
+{name:'Kia Picanto',brand:'Kia',tier:'budget',base:550000,hp:67,fuel:'бензин'},
+{name:'Lada XRAY',brand:'Lada',tier:'budget',base:600000,hp:106,fuel:'бензин'},
+{name:'Ford Focus',brand:'Ford',tier:'budget',base:600000,hp:125,fuel:'бензин'},
+{name:'VW Polo',brand:'VW',tier:'budget',base:700000,hp:110,fuel:'бензин'},
+{name:'Lada Vesta',brand:'Lada',tier:'budget',base:700000,hp:106,fuel:'бензин'},
+{name:'Kia Rio',brand:'Kia',tier:'mid',base:800000,hp:123,fuel:'бензин'},
+{name:'Hyundai Solaris',brand:'Hyundai',tier:'mid',base:900000,hp:123,fuel:'бензин'},
+{name:'Renault Duster',brand:'Renault',tier:'budget',base:900000,hp:143,fuel:'бензин'},
+{name:'VW Golf',brand:'VW',tier:'mid',base:1200000,hp:150,fuel:'бензин'},
+{name:'Kia Ceed',brand:'Kia',tier:'mid',base:1300000,hp:150,fuel:'бензин'},
+{name:'Mazda 3',brand:'Mazda',tier:'mid',base:1300000,hp:150,fuel:'бензин'},
+{name:'Toyota Corolla',brand:'Toyota',tier:'mid',base:1300000,hp:122,fuel:'бензин'},
+{name:'Hyundai Elantra',brand:'Hyundai',tier:'mid',base:1400000,hp:128,fuel:'бензин'},
+{name:'Honda Civic',brand:'Honda',tier:'mid',base:1400000,hp:158,fuel:'бензин'},
+{name:'Kia Optima',brand:'Kia',tier:'mid',base:1500000,hp:188,fuel:'бензин'},
+{name:'Hyundai Creta',brand:'Hyundai',tier:'mid',base:1500000,hp:149,fuel:'бензин'},
+{name:'Nissan Qashqai',brand:'Nissan',tier:'mid',base:1500000,hp:150,fuel:'бензин'},
+{name:'Skoda Octavia',brand:'Skoda',tier:'mid',base:1600000,hp:150,fuel:'бензин'},
+{name:'Mazda 6',brand:'Mazda',tier:'mid',base:1650000,hp:194,fuel:'бензин'},
+{name:'Haval Jolion',brand:'Haval',tier:'budget',base:1700000,hp:143,fuel:'бензин'},
+{name:'Chery Tiggo 7',brand:'Chery',tier:'mid',base:1800000,hp:147,fuel:'бензин'},
+{name:'Kia Sportage',brand:'Kia',tier:'mid',base:1800000,hp:150,fuel:'бензин'},
+{name:'Honda Accord',brand:'Honda',tier:'mid',base:1800000,hp:192,fuel:'бензин'},
+{name:'VW Tiguan',brand:'VW',tier:'mid',base:1900000,hp:180,fuel:'бензин'},
+{name:'Toyota Camry',brand:'Toyota',tier:'premium',base:1900000,hp:249,fuel:'бензин'},
+{name:'Nissan X-Trail',brand:'Nissan',tier:'mid',base:1900000,hp:170,fuel:'бензин'},
+{name:'Hyundai Tucson',brand:'Hyundai',tier:'mid',base:2000000,hp:150,fuel:'бензин'},
+{name:'Audi A4',brand:'Audi',tier:'premium',base:2100000,hp:249,fuel:'бензин'},
+{name:'Haval H6',brand:'Haval',tier:'mid',base:2200000,hp:190,fuel:'бензин'},
+{name:'Mercedes A-class',brand:'Mercedes',tier:'premium',base:2200000,hp:136,fuel:'бензин'},
+{name:'Honda CR-V',brand:'Honda',tier:'premium',base:2300000,hp:193,fuel:'бензин'},
+{name:'Mazda CX-5',brand:'Mazda',tier:'premium',base:2300000,hp:194,fuel:'бензин'},
+{name:'BMW 3',brand:'BMW',tier:'premium',base:2400000,hp:258,fuel:'бензин'},
+{name:'Chery Tiggo 8',brand:'Chery',tier:'mid',base:2400000,hp:186,fuel:'бензин'},
+{name:'Toyota RAV4',brand:'Toyota',tier:'premium',base:2400000,hp:199,fuel:'бензин'},
+{name:'Mercedes E',brand:'Mercedes',tier:'premium',base:2700000,hp:249,fuel:'бензин'},
+{name:'Volvo XC40',brand:'Volvo',tier:'premium',base:2800000,hp:190,fuel:'бензин'},
+{name:'Kia Stinger',brand:'Kia',tier:'premium',base:3000000,hp:370,fuel:'бензин'},
+{name:'Mercedes C-class',brand:'Mercedes',tier:'premium',base:3200000,hp:245,fuel:'бензин'},
+{name:'Audi A6',brand:'Audi',tier:'premium',base:3200000,hp:249,fuel:'бензин'},
+{name:'Hyundai Santa Fe',brand:'Hyundai',tier:'premium',base:3200000,hp:249,fuel:'бензин'},
+{name:'Tesla Model 3',brand:'Tesla',tier:'premium',base:3200000,hp:283,fuel:'электро'},
+{name:'BMW 5',brand:'BMW',tier:'premium',base:3500000,hp:249,fuel:'бензин'},
+{name:'Volvo XC60',brand:'Volvo',tier:'premium',base:3500000,hp:249,fuel:'бензин'},
+{name:'BMW X3',brand:'BMW',tier:'premium',base:4000000,hp:249,fuel:'бензин'},
+{name:'Tesla Model Y',brand:'Tesla',tier:'premium',base:4000000,hp:351,fuel:'электро'},
+{name:'Lexus RX',brand:'Lexus',tier:'premium',base:4500000,hp:299,fuel:'бензин'},
+{name:'Land Rover Discovery',brand:'Land Rover',tier:'premium',base:4500000,hp:249,fuel:'бензин'},
+{name:'Volvo XC90',brand:'Volvo',tier:'premium',base:5000000,hp:300,fuel:'бензин'},
+{name:'BMW X5',brand:'BMW',tier:'premium',base:5500000,hp:340,fuel:'бензин'},
+{name:'Mercedes GLE',brand:'Mercedes',tier:'premium',base:6000000,hp:367,fuel:'бензин'},
+{name:'Porsche Macan',brand:'Porsche',tier:'super',base:6500000,hp:245,fuel:'бензин'},
+{name:'Tesla Model S',brand:'Tesla',tier:'super',base:6500000,hp:670,fuel:'электро'},
+{name:'Land Rover Defender',brand:'Land Rover',tier:'premium',base:7000000,hp:400,fuel:'бензин'},
+{name:'Tesla Model X',brand:'Tesla',tier:'super',base:7500000,hp:670,fuel:'электро'},
+{name:'BMW M3',brand:'BMW',tier:'super',base:8000000,hp:510,fuel:'бензин'},
+{name:'Mercedes S-class',brand:'Mercedes',tier:'premium',base:8000000,hp:435,fuel:'бензин'},
+{name:'Porsche Cayenne',brand:'Porsche',tier:'super',base:9000000,hp:450,fuel:'бензин'},
+{name:'Porsche Taycan',brand:'Porsche',tier:'super',base:10000000,hp:530,fuel:'электро'},
+{name:'BMW X7',brand:'BMW',tier:'premium',base:10000000,hp:340,fuel:'бензин'},
+{name:'Land Rover Range Rover',brand:'Land Rover',tier:'premium',base:11000000,hp:400,fuel:'бензин'},
+{name:'Audi R8',brand:'Audi',tier:'super',base:12000000,hp:540,fuel:'бензин'},
+{name:'Porsche 911',brand:'Porsche',tier:'super',base:12500000,hp:450,fuel:'бензин'},
+{name:'Mercedes G-class',brand:'Mercedes',tier:'premium',base:12000000,hp:422,fuel:'бензин'},
+{name:'Ferrari F8',brand:'Ferrari',tier:'super',base:18000000,hp:720,fuel:'бензин'},
+{name:'Bentley Continental',brand:'Bentley',tier:'super',base:20000000,hp:635,fuel:'бензин'},
+{name:'Lamborghini Huracan',brand:'Lamborghini',tier:'super',base:20000000,hp:640,fuel:'бензин'},
+{name:'Ferrari Roma',brand:'Ferrari',tier:'super',base:22000000,hp:620,fuel:'бензин'},
+{name:'Lamborghini Urus',brand:'Lamborghini',tier:'super',base:25000000,hp:650,fuel:'бензин'},
+{name:'McLaren 720S',brand:'McLaren',tier:'super',base:28000000,hp:720,fuel:'бензин'},
+{name:'Lamborghini Aventador',brand:'Lamborghini',tier:'super',base:30000000,hp:770,fuel:'бензин'},
+{name:'Rolls-Royce Ghost',brand:'Rolls-Royce',tier:'super',base:35000000,hp:571,fuel:'бензин'},
+{name:'Bugatti Chiron',brand:'Bugatti',tier:'super',base:150000000,hp:1500,fuel:'бензин'}
+];
+
+MB=MB.concat([
+{name:'Lada 4x4 Urban',brand:'Lada',tier:'budget',base:550000,hp:83,fuel:'бензин'},
+{name:'Lada Niva Travel',brand:'Lada',tier:'budget',base:1000000,hp:80,fuel:'бензин'},
+{name:'Lada Vesta SW',brand:'Lada',tier:'budget',base:950000,hp:106,fuel:'бензин'},
+{name:'Lada Vesta Cross',brand:'Lada',tier:'mid',base:1200000,hp:113,fuel:'бензин'},
+{name:'Lada Aura',brand:'Lada',tier:'mid',base:1600000,hp:122,fuel:'бензин'},
+{name:'Moskvich 3',brand:'Москвич',tier:'mid',base:2200000,hp:150,fuel:'бензин'},
+{name:'Moskvich 6',brand:'Москвич',tier:'mid',base:2500000,hp:174,fuel:'бензин'},
+{name:'UAZ Patriot',brand:'УАЗ',tier:'budget',base:1300000,hp:149,fuel:'бензин'},
+{name:'UAZ Hunter',brand:'УАЗ',tier:'budget',base:1100000,hp:135,fuel:'бензин'},
+{name:'GAZelle Next',brand:'ГАЗ',tier:'budget',base:1800000,hp:149,fuel:'бензин'},
+{name:'Toyota Land Cruiser Prado',brand:'Toyota',tier:'premium',base:6500000,hp:249,fuel:'бензин'},
+{name:'Toyota Land Cruiser 300',brand:'Toyota',tier:'super',base:12000000,hp:415,fuel:'бензин'},
+{name:'Toyota Supra',brand:'Toyota',tier:'super',base:8500000,hp:340,fuel:'бензин'},
+{name:'Toyota Highlander',brand:'Toyota',tier:'premium',base:5000000,hp:249,fuel:'бензин'},
+{name:'Toyota C-HR',brand:'Toyota',tier:'mid',base:2300000,hp:150,fuel:'бензин'},
+{name:'Honda Pilot',brand:'Honda',tier:'premium',base:4200000,hp:249,fuel:'бензин'},
+{name:'Honda HR-V',brand:'Honda',tier:'mid',base:2200000,hp:158,fuel:'бензин'},
+{name:'Nissan Patrol',brand:'Nissan',tier:'super',base:9500000,hp:405,fuel:'бензин'},
+{name:'Nissan Murano',brand:'Nissan',tier:'premium',base:3200000,hp:249,fuel:'бензин'},
+{name:'Nissan Terrano',brand:'Nissan',tier:'budget',base:1200000,hp:143,fuel:'бензин'},
+{name:'Kia Sorento',brand:'Kia',tier:'premium',base:4200000,hp:249,fuel:'бензин'},
+{name:'Kia K5',brand:'Kia',tier:'mid',base:2500000,hp:194,fuel:'бензин'},
+{name:'Kia Seltos',brand:'Kia',tier:'mid',base:2200000,hp:149,fuel:'бензин'},
+{name:'Hyundai Creta II',brand:'Hyundai',tier:'mid',base:2500000,hp:150,fuel:'бензин'},
+{name:'Hyundai Sonata',brand:'Hyundai',tier:'mid',base:2600000,hp:180,fuel:'бензин'},
+{name:'Hyundai Palisade',brand:'Hyundai',tier:'premium',base:5200000,hp:249,fuel:'бензин'},
+{name:'Geely Coolray',brand:'Geely',tier:'mid',base:2300000,hp:150,fuel:'бензин'},
+{name:'Geely Monjaro',brand:'Geely',tier:'premium',base:4500000,hp:238,fuel:'бензин'},
+{name:'Geely Atlas Pro',brand:'Geely',tier:'mid',base:2800000,hp:177,fuel:'бензин'},
+{name:'Chery Tiggo 4',brand:'Chery',tier:'mid',base:1900000,hp:147,fuel:'бензин'},
+{name:'Chery Tiggo 8 Pro Max',brand:'Chery',tier:'premium',base:4300000,hp:197,fuel:'бензин'},
+{name:'Exeed TXL',brand:'Exeed',tier:'premium',base:4500000,hp:197,fuel:'бензин'},
+{name:'Exeed VX',brand:'Exeed',tier:'premium',base:5600000,hp:249,fuel:'бензин'},
+{name:'Omoda C5',brand:'Omoda',tier:'mid',base:2400000,hp:147,fuel:'бензин'},
+{name:'Jaecoo J7',brand:'Jaecoo',tier:'mid',base:3200000,hp:186,fuel:'бензин'},
+{name:'Haval F7',brand:'Haval',tier:'mid',base:3000000,hp:190,fuel:'бензин'},
+{name:'Haval Dargo',brand:'Haval',tier:'mid',base:3300000,hp:192,fuel:'бензин'},
+{name:'Changan CS75 Plus',brand:'Changan',tier:'mid',base:2900000,hp:181,fuel:'бензин'},
+{name:'Changan Uni-K',brand:'Changan',tier:'premium',base:4200000,hp:226,fuel:'бензин'},
+{name:'Jetour X70',brand:'Jetour',tier:'mid',base:2500000,hp:147,fuel:'бензин'},
+{name:'Jetour Dashing',brand:'Jetour',tier:'mid',base:2900000,hp:147,fuel:'бензин'},
+{name:'Volkswagen Touareg',brand:'VW',tier:'premium',base:6500000,hp:249,fuel:'бензин'},
+{name:'Volkswagen Passat',brand:'VW',tier:'mid',base:2500000,hp:190,fuel:'бензин'},
+{name:'Skoda Kodiaq',brand:'Skoda',tier:'premium',base:3800000,hp:180,fuel:'бензин'},
+{name:'Skoda Superb',brand:'Skoda',tier:'premium',base:3600000,hp:190,fuel:'бензин'},
+{name:'Audi Q5',brand:'Audi',tier:'premium',base:5500000,hp:249,fuel:'бензин'},
+{name:'Audi Q7',brand:'Audi',tier:'super',base:8500000,hp:340,fuel:'бензин'},
+{name:'BMW X1',brand:'BMW',tier:'premium',base:4000000,hp:204,fuel:'бензин'},
+{name:'BMW X6',brand:'BMW',tier:'super',base:8000000,hp:340,fuel:'бензин'},
+{name:'BMW 7',brand:'BMW',tier:'super',base:11000000,hp:381,fuel:'бензин'},
+{name:'Mercedes GLC',brand:'Mercedes',tier:'premium',base:6200000,hp:258,fuel:'бензин'},
+{name:'Mercedes GLS',brand:'Mercedes',tier:'super',base:12000000,hp:381,fuel:'бензин'},
+{name:'Mercedes CLA',brand:'Mercedes',tier:'premium',base:3500000,hp:163,fuel:'бензин'},
+{name:'Porsche Panamera',brand:'Porsche',tier:'super',base:10000000,hp:330,fuel:'бензин'},
+{name:'Porsche 718 Cayman',brand:'Porsche',tier:'super',base:9000000,hp:300,fuel:'бензин'},
+{name:'Lexus ES',brand:'Lexus',tier:'premium',base:5000000,hp:200,fuel:'бензин'},
+{name:'Lexus LX',brand:'Lexus',tier:'super',base:14000000,hp:409,fuel:'бензин'},
+{name:'Volvo S90',brand:'Volvo',tier:'premium',base:5000000,hp:250,fuel:'бензин'},
+{name:'Volvo V90',brand:'Volvo',tier:'premium',base:4800000,hp:250,fuel:'бензин'},
+{name:'Genesis G70',brand:'Genesis',tier:'premium',base:4200000,hp:197,fuel:'бензин'},
+{name:'Genesis GV80',brand:'Genesis',tier:'super',base:7500000,hp:249,fuel:'бензин'},
+{name:'Cadillac Escalade',brand:'Cadillac',tier:'super',base:14000000,hp:426,fuel:'бензин'},
+{name:'Jeep Wrangler',brand:'Jeep',tier:'premium',base:6500000,hp:272,fuel:'бензин'},
+{name:'Jeep Grand Cherokee',brand:'Jeep',tier:'premium',base:7000000,hp:286,fuel:'бензин'},
+{name:'Ford Mustang',brand:'Ford',tier:'super',base:6500000,hp:450,fuel:'бензин'},
+{name:'Ford Explorer',brand:'Ford',tier:'premium',base:4800000,hp:300,fuel:'бензин'},
+{name:'Chevrolet Camaro',brand:'Chevrolet',tier:'super',base:6500000,hp:455,fuel:'бензин'},
+{name:'Chevrolet Tahoe',brand:'Chevrolet',tier:'super',base:9000000,hp:426,fuel:'бензин'},
+{name:'Dodge Challenger',brand:'Dodge',tier:'super',base:7500000,hp:485,fuel:'бензин'},
+{name:'Subaru Forester',brand:'Subaru',tier:'mid',base:3000000,hp:185,fuel:'бензин'},
+{name:'Mitsubishi Outlander',brand:'Mitsubishi',tier:'mid',base:3000000,hp:184,fuel:'бензин'},
+{name:'Mitsubishi Pajero Sport',brand:'Mitsubishi',tier:'premium',base:5000000,hp:181,fuel:'дизель'},
+{name:'Mazda CX-30',brand:'Mazda',tier:'mid',base:2500000,hp:150,fuel:'бензин'},
+{name:'Mazda CX-9',brand:'Mazda',tier:'premium',base:4500000,hp:231,fuel:'бензин'},
+{name:'Renault Arkana',brand:'Renault',tier:'mid',base:2200000,hp:150,fuel:'бензин'},
+{name:'Renault Koleos',brand:'Renault',tier:'mid',base:2600000,hp:171,fuel:'бензин'},
+{name:'Peugeot 3008',brand:'Peugeot',tier:'mid',base:2600000,hp:150,fuel:'бензин'},
+{name:'Citroen C5 Aircross',brand:'Citroen',tier:'mid',base:2700000,hp:180,fuel:'бензин'},
+{name:'Suzuki Vitara',brand:'Suzuki',tier:'mid',base:2200000,hp:117,fuel:'бензин'},
+{name:'Suzuki Jimny',brand:'Suzuki',tier:'mid',base:2500000,hp:102,fuel:'бензин'},
+{name:'Infiniti QX80',brand:'Infiniti',tier:'super',base:8500000,hp:405,fuel:'бензин'},
+{name:'Infiniti QX50',brand:'Infiniti',tier:'premium',base:3800000,hp:249,fuel:'бензин'},
+{name:'Jaguar F-Pace',brand:'Jaguar',tier:'premium',base:5500000,hp:250,fuel:'бензин'},
+{name:'Jaguar F-Type',brand:'Jaguar',tier:'super',base:7500000,hp:300,fuel:'бензин'},
+{name:'Maserati Ghibli',brand:'Maserati',tier:'super',base:8000000,hp:350,fuel:'бензин'},
+{name:'Maserati Levante',brand:'Maserati',tier:'super',base:9000000,hp:350,fuel:'бензин'},
+{name:'Aston Martin Vantage',brand:'Aston Martin',tier:'super',base:18000000,hp:510,fuel:'бензин'},
+{name:'Lotus Emira',brand:'Lotus',tier:'super',base:10000000,hp:400,fuel:'бензин'},
+{name:'Toyota Prius',brand:'Toyota',tier:'mid',base:2200000,hp:122,fuel:'гибрид'},
+{name:'Lexus NX',brand:'Lexus',tier:'premium',base:4800000,hp:197,fuel:'гибрид'},
+{name:'Kia EV6',brand:'Kia',tier:'premium',base:5200000,hp:325,fuel:'электро'},
+{name:'Hyundai Ioniq 5',brand:'Hyundai',tier:'premium',base:5000000,hp:325,fuel:'электро'},
+{name:'Zeekr 001',brand:'Zeekr',tier:'premium',base:5500000,hp:544,fuel:'электро'},
+{name:'Zeekr X',brand:'Zeekr',tier:'premium',base:4500000,hp:428,fuel:'электро'},
+{name:'Li Auto L7',brand:'Li Auto',tier:'premium',base:6500000,hp:449,fuel:'гибрид'},
+{name:'Li Auto L9',brand:'Li Auto',tier:'super',base:8500000,hp:449,fuel:'гибрид'},
+{name:'Voyah Free',brand:'Voyah',tier:'premium',base:5000000,hp:489,fuel:'электро'},
+{name:'Tank 300',brand:'Tank',tier:'premium',base:4200000,hp:220,fuel:'бензин'},
+{name:'Tank 500',brand:'Tank',tier:'premium',base:6000000,hp:299,fuel:'бензин'}
+]);
+
+
+var CITIES=[
+{id:'abakan',name:'Абакан',dist:0,cars:2},
+{id:'krasnoyarsk',name:'Красноярск',dist:326,cars:2},
+{id:'novosibirsk',name:'Новосибирск',dist:800,cars:2},
+{id:'ekb',name:'Екатеринбург',dist:1900,cars:2},
+{id:'kazan',name:'Казань',dist:2300,cars:2},
+{id:'moscow',name:'Москва',dist:3400,cars:2},
+{id:'spb',name:'Санкт-Петербург',dist:3800,cars:2},
+{id:'omsk',name:'Омск',dist:1100,cars:2},
+{id:'tomsk',name:'Томск',dist:900,cars:2},
+{id:'kemerovo',name:'Кемерово',dist:700,cars:2},
+{id:'barnaul',name:'Барнаул',dist:600,cars:2},
+{id:'irkutsk',name:'Иркутск',dist:1200,cars:2},
+{id:'ulanude',name:'Улан-Удэ',dist:1500,cars:2},
+{id:'chita',name:'Чита',dist:1800,cars:2},
+{id:'vladivostok',name:'Владивосток',dist:5200,cars:2},
+{id:'khabarovsk',name:'Хабаровск',dist:5000,cars:2},
+{id:'yakutsk',name:'Якутск',dist:3500,cars:2},
+{id:'magadan',name:'Магадан',dist:6000,cars:2},
+{id:'petropavlovsk',name:'Петропавловск-Камчатский',dist:6500,cars:2},
+{id:'yuzhnosakhalinsk',name:'Южно-Сахалинск',dist:5700,cars:2},
+{id:'tyumen',name:'Тюмень',dist:2100,cars:2},
+{id:'surgut',name:'Сургут',dist:1900,cars:2},
+{id:'nizhnevartovsk',name:'Нижневартовск',dist:2000,cars:2},
+{id:'salekhard',name:'Салехард',dist:2500,cars:2},
+{id:'khanty',name:'Ханты-Мансийск',dist:2200,cars:2},
+{id:'chelyabinsk',name:'Челябинск',dist:2100,cars:2},
+{id:'magnitogorsk',name:'Магнитогорск',dist:2200,cars:2},
+{id:'ufa',name:'Уфа',dist:2500,cars:2},
+{id:'orenburg',name:'Оренбург',dist:2800,cars:2},
+{id:'perm',name:'Пермь',dist:2500,cars:2},
+{id:'izhevsk',name:'Ижевск',dist:2400,cars:2},
+{id:'kirov',name:'Киров',dist:2900,cars:2},
+{id:'yoshkarola',name:'Йошкар-Ола',dist:2500,cars:2},
+{id:'cheboksary',name:'Чебоксары',dist:2600,cars:2},
+{id:'nizhny',name:'Нижний Новгород',dist:3000,cars:2},
+{id:'vladimir',name:'Владимир',dist:3200,cars:2},
+{id:'ivanovo',name:'Иваново',dist:3300,cars:2},
+{id:'yaroslavl',name:'Ярославль',dist:3200,cars:2},
+{id:'kostroma',name:'Кострома',dist:3300,cars:2},
+{id:'tver',name:'Тверь',dist:3500,cars:2},
+{id:'ryazan',name:'Рязань',dist:3400,cars:2},
+{id:'tula',name:'Тула',dist:3500,cars:2},
+{id:'kaluga',name:'Калуга',dist:3500,cars:2},
+{id:'bryansk',name:'Брянск',dist:3700,cars:2},
+{id:'orel',name:'Орёл',dist:3600,cars:2},
+{id:'kursk',name:'Курск',dist:3900,cars:2},
+{id:'belgorod',name:'Белгород',dist:4000,cars:2},
+{id:'voronezh',name:'Воронеж',dist:3800,cars:2},
+{id:'lipetsk',name:'Липецк',dist:3700,cars:2},
+{id:'tambov',name:'Тамбов',dist:3700,cars:2},
+{id:'saratov',name:'Саратов',dist:4000,cars:2},
+{id:'penza',name:'Пенза',dist:3600,cars:2},
+{id:'samara',name:'Самара',dist:3200,cars:2},
+{id:'ulyanovsk',name:'Ульяновск',dist:3000,cars:2},
+{id:'saransk',name:'Саранск',dist:3300,cars:2},
+{id:'volgograd',name:'Волгоград',dist:4300,cars:2},
+{id:'astrakhan',name:'Астрахань',dist:4700,cars:2},
+{id:'rostov',name:'Ростов-на-Дону',dist:4500,cars:2},
+{id:'taganrog',name:'Таганрог',dist:4600,cars:2},
+{id:'krasnodar',name:'Краснодар',dist:5000,cars:2},
+{id:'sochi',name:'Сочи',dist:5300,cars:2},
+{id:'stavropol',name:'Ставрополь',dist:5100,cars:2},
+{id:'nalchik',name:'Нальчик',dist:5200,cars:2},
+{id:'vladikavkaz',name:'Владикавказ',dist:5300,cars:2},
+{id:'grozny',name:'Грозный',dist:5400,cars:2},
+{id:'makhachkala',name:'Махачкала',dist:5500,cars:2},
+{id:'cherkessk',name:'Черкесск',dist:5300,cars:2},
+{id:'maykop',name:'Майкоп',dist:5100,cars:2},
+{id:'kaliningrad',name:'Калининград',dist:4500,cars:2},
+{id:'murmansk',name:'Мурманск',dist:4300,cars:2},
+{id:'arkhangelsk',name:'Архангельск',dist:3800,cars:2},
+{id:'vologda',name:'Вологда',dist:3500,cars:2},
+{id:'cherepovets',name:'Череповец',dist:3400,cars:2},
+{id:'petrozavodsk',name:'Петрозаводск',dist:4100,cars:2},
+{id:'pskov',name:'Псков',dist:4300,cars:2},
+{id:'velikynovgorod',name:'Великий Новгород',dist:4000,cars:2},
+{id:'smolensk',name:'Смоленск',dist:3900,cars:2},
+{id:'naberezhnye',name:'Набережные Челны',dist:2500,cars:2},
+{id:'nizhnekamsk',name:'Нижнекамск',dist:2500,cars:2},
+{id:'almetyevsk',name:'Альметьевск',dist:2600,cars:2},
+{id:'orenburg2',name:'Орск',dist:3000,cars:2},
+{id:'sterlitamak',name:'Стерлитамак',dist:2600,cars:2},
+{id:'syzran',name:'Сызрань',dist:3400,cars:2},
+{id:'tolyatti',name:'Тольятти',dist:3300,cars:2},
+{id:'engels',name:'Энгельс',dist:4000,cars:2},
+{id:'balakovo',name:'Балаково',dist:3900,cars:2},
+{id:'kirov2',name:'Кирово-Чепецк',dist:2900,cars:2},
+{id:'bratsk',name:'Братск',dist:1500,cars:2},
+{id:'angarsk',name:'Ангарск',dist:1250,cars:2},
+{id:'surgut2',name:'Ноябрьск',dist:2300,cars:2},
+{id:'novyurengoy',name:'Новый Уренгой',dist:2600,cars:2},
+{id:'norilsk',name:'Норильск',dist:2200,cars:2},
+{id:'monchegorsk',name:'Мончегорск',dist:4400,cars:2},
+{id:'severodvinsk',name:'Северодвинск',dist:3900,cars:2},
+{id:'velikieluki',name:'Великие Луки',dist:4400,cars:2},
+{id:'balashov',name:'Балашов',dist:3900,cars:2},
+{id:'yessentuki',name:'Ессентуки',dist:5200,cars:2},
+{id:'mineralnye',name:'Минеральные Воды',dist:5200,cars:2},
+{id:'temryuk',name:'Темрюк',dist:5100,cars:2},
+{id:'gelendzhik',name:'Геленджик',dist:5200,cars:2}
+];
+
+CITIES=CITIES.concat([
+{id:'rostov2',name:'Шахты',dist:4500,cars:2},{id:'novocherkassk',name:'Новочеркасск',dist:4500,cars:2},{id:'volgodonsk',name:'Волгодонск',dist:4300,cars:2},{id:'novorossiysk',name:'Новороссийск',dist:5100,cars:2},{id:'armavir',name:'Армавир',dist:5000,cars:2},{id:'anapa',name:'Анапа',dist:5200,cars:2},{id:'adler',name:'Адлер',dist:5300,cars:2},{id:'bataysk',name:'Батайск',dist:4500,cars:2},{id:'kislovodsk',name:'Кисловодск',dist:5200,cars:2},{id:'pyatigorsk',name:'Пятигорск',dist:5200,cars:2},
+{id:'derbent',name:'Дербент',dist:5600,cars:2},{id:'kaspiysk',name:'Каспийск',dist:5500,cars:2},{id:'buynaksk',name:'Буйнакск',dist:5500,cars:2},{id:'nazran',name:'Назрань',dist:5400,cars:2},{id:'derbent2',name:'Кизляр',dist:5500,cars:2},{id:'eisk',name:'Ейск',dist:5000,cars:2},{id:'slavyansk',name:'Славянск-на-Кубани',dist:5000,cars:2},{id:'belorechensk',name:'Белореченск',dist:5100,cars:2},{id:'tuapse',name:'Туапсе',dist:5200,cars:2},{id:'krymsk',name:'Крымск',dist:5100,cars:2},
+{id:'kursk2',name:'Железногорск',dist:3800,cars:2},{id:'staryoskol',name:'Старый Оскол',dist:4000,cars:2},{id:'rossosh',name:'Россошь',dist:3900,cars:2},{id:'efremov',name:'Ефремов',dist:3500,cars:2},{id:'novomoskovsk',name:'Новомосковск',dist:3500,cars:2},{id:'kolomna',name:'Коломна',dist:3400,cars:2},{id:'podolsk',name:'Подольск',dist:3450,cars:2},{id:'khimki',name:'Химки',dist:3400,cars:2},{id:'balashikha',name:'Балашиха',dist:3400,cars:2},{id:'korolev',name:'Королёв',dist:3400,cars:2},
+{id:'mytishchi',name:'Мытищи',dist:3400,cars:2},{id:'lyubertsy',name:'Люберцы',dist:3400,cars:2},{id:'reutov',name:'Реутов',dist:3400,cars:2},{id:'odintsovo',name:'Одинцово',dist:3400,cars:2},{id:'pushkino',name:'Пушкино',dist:3400,cars:2},{id:'sergiev',name:'Сергиев Посад',dist:3500,cars:2},{id:'dmitrov',name:'Дмитров',dist:3500,cars:2},{id:'klin',name:'Клин',dist:3500,cars:2},{id:'noginsk',name:'Ногинск',dist:3500,cars:2},{id:'orekhovo',name:'Орехово-Зуево',dist:3500,cars:2},
+{id:'rybinsk',name:'Рыбинск',dist:3250,cars:2},{id:'uglich',name:'Углич',dist:3300,cars:2},{id:'pereslavl',name:'Переславль-Залесский',dist:3250,cars:2},{id:'vologda2',name:'Великий Устюг',dist:3700,cars:2},{id:'kotlas',name:'Котлас',dist:3900,cars:2},{id:'segezha',name:'Сегежа',dist:4200,cars:2},{id:'kandalaksha',name:'Кандалакша',dist:4500,cars:2},{id:'apatity',name:'Апатиты',dist:4400,cars:2},{id:'monchegorsk2',name:'Ковдор',dist:4500,cars:2},{id:'kandalaksha2',name:'Полярные Зори',dist:4500,cars:2},
+{id:'kaluga2',name:'Обнинск',dist:3500,cars:2},{id:'dyatkovo',name:'Дятьково',dist:3700,cars:2},{id:'klintsy',name:'Клинцы',dist:3800,cars:2},{id:'roslavl',name:'Рославль',dist:3900,cars:2},{id:'vyazma',name:'Вязьма',dist:3700,cars:2},{id:'gagarin',name:'Гагарин',dist:3600,cars:2},{id:'rzhyev',name:'Ржев',dist:3500,cars:2},{id:'torzhok',name:'Торжок',dist:3500,cars:2},{id:'vyshny',name:'Вышний Волочёк',dist:3500,cars:2},{id:'bezhetsk',name:'Бежецк',dist:3500,cars:2}
+]);
+
+
+var GARAGES=[
+{id:'g1',name:'Ракушка',emoji:'🏚️',desc:'1 машина',price:150000,slots:1},
+{id:'g2',name:'Гараж',emoji:'🏠',desc:'3 машины',price:500000,slots:3},
+{id:'g3',name:'Большой',emoji:'🏢',desc:'8 машин',price:1500000,slots:8},
+{id:'g4',name:'Салон',emoji:'🏬',desc:'20 машин',price:5000000,slots:20},
+{id:'g5',name:'Ангар',emoji:'🏭',desc:'50 машин',price:15000000,slots:50}
+];
+
+var PROMOS={'matvey6767':{amount:1000000,desc:'Бонус разработчика'}};
+
+function save(){try{localStorage.setItem(SAVE,JSON.stringify(S))}catch(e){}}
+function normalizeCarPhotos(){
+  var changed=false;
+  var groups=[S.cars||[],S.garage||[]];
+  for(var g=0;g<groups.length;g++){
+    var arr=groups[g];
+    for(var i=0;i<arr.length;i++){
+      var c=arr[i];
+      if(!c)continue;
+      var newPhoto=CAR_PHOTO_LIST[i%CAR_PHOTO_LIST.length];
+      if(c.photo!==newPhoto){c.photo=newPhoto;changed=true}
+      c.fallbackPhoto=svg(c.model||'Авто',c.year||2020);var mp=calcMarketPrice(c);if(c.marketPrice!==mp){c.marketPrice=mp;changed=true}
+    }
+  }
+  if(changed)save();
+}
+function carImg(c,style){
+  var fb=encodeURIComponent(c.fallbackPhoto||svg(c.model||'Авто',c.year||2020));
+  return '<img src="'+c.photo+'" data-fallback="'+fb+'" onerror="this.onerror=null;this.src=decodeURIComponent(this.dataset.fallback)"'+(style?' style="'+style+'"':'')+'>';
+}
+function load(){try{var d=JSON.parse(localStorage.getItem(SAVE));if(!d)return false;for(var k in d)S[k]=d[k];if(!S.rating)S.rating=5.0;if(!S.reviews)S.reviews=0;if(S.bbRecord===undefined)S.bbRecord=0;if(!S.debtDay)S.debtDay=0;if(!S.debtOverdue)S.debtOverdue=0;if(S.calOffset===undefined)S.calOffset=0;if(!S.filter)S.filter={priceMin:0,priceMax:999999999,yearMin:2000,yearMax:2025,city:'all',sort:'price-asc'};if(!S.cars||S.cars.length===0){
+refill();
+}else{
+while(S.cars.length<500){
+  var nc=genCar();
+  nc.cityId=CITIES[S.cars.length%CITIES.length].id;
+  S.cars.push(nc);
+}
+normalizeCarPhotos();
+save();
+}
+return true}catch(e){return false}}
+function fmt(n){return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,' ')}
+function city(id){for(var i=0;i<CITIES.length;i++)if(CITIES[i].id===id)return CITIES[i];return CITIES[0]}
+function tm(){var h=Math.floor(S.time),m=Math.round((S.time-h)*60);if(m>=60){h++;m=0}if(h>=24)h=0;return (h<10?'0':'')+h+':'+(m<10?'0':'')+m}
+function cap(){var t=0;for(var gid in S.garages){var arr=S.garages[gid]||[];for(var i=0;i<arr.length;i++)for(var j=0;j<GARAGES.length;j++)if(GARAGES[j].id===arr[i])t+=GARAGES[j].slots}return t}
+function vin(){var l='ABCDEFGHJKLMNPRSTUVWXYZ',s='';for(var i=0;i<3;i++)s+=l[Math.floor(Math.random()*l.length)];return s+(1000+Math.floor(Math.random()*9000))}
+function svg(m,year){var col=['#c0392b','#2980b9','#27ae60','#f39c12','#8e44ad','#16a085','#2c3e50','#d35400'];var hsh=0;for(var i=0;i<m.length;i++)hsh+=m.charCodeAt(i);var c=col[hsh%col.length];var s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 320"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#87ceeb"/><stop offset="1" stop-color="#b0d8f0"/></linearGradient></defs><rect width="480" height="320" fill="url(#b)"/><circle cx="400" cy="60" r="35" fill="#fff5a0"/><rect y="255" width="480" height="65" fill="#3a3a3a"/><path d="M60 260 L80 210 Q100 190 160 185 L340 185 Q400 190 420 210 L440 260 Z" fill="'+c+'"/><rect x="150" y="200" width="50" height="35" fill="#87ceeb" rx="3"/><rect x="210" y="195" width="60" height="40" fill="#87ceeb" rx="3"/><rect x="280" y="200" width="50" height="35" fill="#87ceeb" rx="3"/><circle cx="130" cy="250" r="32" fill="#1a1a1a"/><circle cx="130" cy="250" r="16" fill="#666"/><circle cx="370" cy="250" r="32" fill="#1a1a1a"/><circle cx="370" cy="250" r="16" fill="#666"/><text x="240" y="35" font-size="20" font-weight="bold" fill="#fff" text-anchor="middle">'+m.substring(0,3).toUpperCase()+'</text></svg>';return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s)}
+var CAR_PHOTO_LIST=["https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1553440569-bcc63803a83d?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1504215680853-026ed2a45def?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=900&q=80", "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=900&q=80"];
+function getModelBase(c){for(var i=0;i<MB.length;i++)if(MB[i].name===c.model&&MB[i].brand===c.brand)return MB[i].base;return c.buyPrice||150000;}
+function calcMarketPrice(c){var base=getModelBase(c),yr=c.year||2020,age=Math.max(0,2026-yr),cond=c.condition||70;var dep=base>5000000?Math.max(.48,1-age*.025):Math.max(.28,1-age*.055);var condMul=.72+cond*.004;var demand=1;var nm=(c.model||'').toLowerCase();if(/camry|land cruiser|g-class|patrol|prado|priora|granta|vesta|niva|corolla|rio|solaris/.test(nm))demand=1.08;return Math.max(15000,Math.round(base*dep*condMul*demand/1000)*1000);}
+function genCar(){var m=MB[Math.floor(Math.random()*MB.length)],yr=2005+Math.floor(Math.random()*20),age=2025-yr;var dr=m.base>5000000?0.03:0.07,mf=m.base>5000000?0.6:0.4;var pr=Math.max(mf,1-age*dr)*m.base;pr=Math.round(pr/1000)*1000;pr=Math.round(pr*(0.85+Math.random()*0.35));pr=Math.max(15000,pr);var c=Math.floor(35+Math.random()*66),sf=0.75+(c/100)*0.75,sp=Math.round(pr*sf*(0.9+Math.random()*0.25));var r=Math.random()<0.15,sn=['Никита','Алексей','Дмитрий','Сергей','Иван','Максим','Андрей','Николай','Олег','Владимир'];return{id:'c'+Math.random().toString(36).slice(2,10),model:m.name,brand:m.brand,photo:CAR_PHOTO_LIST[Math.floor(Math.random()*CAR_PHOTO_LIST.length)],fallbackPhoto:svg(m.name,yr),tier:m.tier,hp:m.hp,fuel:m.fuel,year:yr,buyPrice:pr,marketPrice:0,sellPrice:Math.max(15000,sp),condition:c,repairCost:Math.round(pr*0.08),seller:sn[Math.floor(Math.random()*sn.length)],minPrice:Math.round(pr*0.8),cityId:S.city,vin:vin(),restricted:r,restrictionType:r?'запрет':'',accident:Math.random()<0.3,wanted:Math.random()<0.05,pledge:r&&Math.random()<0.5};c.marketPrice=calcMarketPrice(c);return c}
+function refill(){
+S.cars=[];
+for(var i=0;i<500;i++){
+  var c=genCar();
+  c.cityId=CITIES[i%CITIES.length].id;
+  S.cars.push(c);
+}
+save();
+}
+function toast(msg,c){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('sh');t.style.background=c==='green'?'rgba(39,174,96,.95)':c==='red'?'rgba(231,76,60,.95)':'rgba(0,0,0,.88)';clearTimeout(window._t);window._t=setTimeout(function(){t.classList.remove('sh')},2000)}
+function upd(){document.getElementById('mt').textContent=fmt(S.money)+' ₽';document.getElementById('hm').textContent=fmt(S.money);document.getElementById('wm').textContent=fmt(S.money)+' ₽';document.getElementById('gameClock').textContent=tm();var bc=document.getElementById('bbGameClock');if(bc)bc.textContent=tm();var td=document.getElementById('topDay');if(td)td.textContent=S.day;var rt=document.getElementById('rt');if(rt)rt.textContent=(S.rating||5.0).toFixed(1)}
+function closeApp(){document.getElementById('aw').classList.remove('op');window._activeApp='';save()}
+
+function openApp(n){
+window._activeApp=n;
+var w=document.getElementById('aw'),t=document.getElementById('at'),b=document.getElementById('ab');
+w.classList.add('op');upd();
+var T={market:'AvtoBuy',garage:'🏠 Гараж',gibdd:'🚔 ГИБДД',realestate:'🏢 Недвижимость',bank:'П-Банк',travel:'🗺️ Поездки',music:'🎵 Музыка',developer:'👨‍💻 Разработчик',promo:'🎁 Промокоды',casino:'🎰 Казино',rats:'🐀 Крысы',block:'🎮 Блокбастер',alarm:'⏰ Будильник',calendar:'📆 Календарь',filters:'⚙️ Фильтры',achievements:'🏆 Награды',log:'📋 Журнал',chats:'💬 Чаты',sleep:'🌙 Сон',settings:'⚙️ Настройки',nick:'👤 Ник',friends:'👥 Найти друзей'};
+var F={market:rMarket,garage:rGarage,gibdd:rGibdd,realestate:rReal,bank:rBank,travel:rTravel,music:rMusic,developer:rDev,promo:rPromo,casino:rCasino,rats:rRats,block:rBlock,alarm:rAlarm,calendar:rCalendar,filters:rFilters,achievements:rAch,log:rLog,chats:rChats,sleep:rSleep,settings:rSettings,nick:function(){openNickApp();return document.getElementById('ab').innerHTML},friends:function(){renderFriends();return document.getElementById('ab').innerHTML}};
+t.textContent=T[n]||'AvtoBuy';
+b.innerHTML=F[n]?F[n]():'<div class="emp">Приложение не найдено</div>';
+}
+
+function ensureListings(){if(!Array.isArray(S.listings))S.listings=[];}
+function openListCarPicker(){
+  ensureListings();
+  var old=document.getElementById('listCarModal');if(old)old.remove();
+  if(!S.garage||S.garage.length===0){toast('🚫 В гараже нет машин','red');return;}
+  var d=document.createElement('div');d.id='listCarModal';d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100';
+  var h='<div style="position:absolute;left:8px;right:8px;bottom:8px;background:#fff;border-radius:20px;padding:14px;max-height:82vh;overflow:auto"><h2 style="margin:4px 0 6px">➕ Выставить машину</h2><div style="color:#777;margin-bottom:12px">Выберите машину из гаража</div>';
+  S.garage.forEach(function(c){
+    var listed=S.listings.some(function(x){return x.sourceId===c.id;});
+    h+='<div style="display:flex;align-items:center;gap:9px;background:#f5f6f8;border-radius:14px;padding:8px;margin:7px 0">'+
+      '<div style="width:82px;height:58px;flex:0 0 82px;overflow:hidden;border-radius:8px">'+carImg(c)+'</div>'+
+      '<div style="flex:1;min-width:0"><b>'+c.brand+' '+c.model+'</b><div style="font-size:.8rem;color:#777">Рынок: '+fmt(c.marketPrice||calcMarketPrice(c))+' ₽</div></div>'+
+      (listed?'<button class="btn gy" style="width:auto;margin:0;padding:9px 12px">Уже выставлена</button>':'<button class="btn bl" style="width:auto;margin:0;padding:9px 12px" onclick="chooseListing(\''+c.id+'\')">Выбрать</button>')+
+      '</div>';
+  });
+  h+='<button class="btn gy" onclick="this.parentElement.parentElement.remove()">Отмена</button></div></div>';
+  d.innerHTML=h;document.body.appendChild(d);
+}
+function chooseListing(id){
+  var c=null;for(var i=0;i<S.garage.length;i++)if(S.garage[i].id===id){c=S.garage[i];break}
+  if(!c)return;
+  var market=c.marketPrice||calcMarketPrice(c),old=document.getElementById('listCarModal');if(old)old.remove();
+  var d=document.createElement('div');d.id='listPriceModal';d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:101';
+  d.innerHTML='<div style="position:absolute;left:10px;right:10px;bottom:10px;background:#fff;border-radius:20px;padding:18px"><h2 style="margin:0 0 8px">🚗 '+c.brand+' '+c.model+'</h2><div style="color:#e67e22;font-weight:800;margin-bottom:12px">📊 Рыночная цена: '+fmt(market)+' ₽</div><label style="font-weight:700">Цена продажи</label><input id="listPrice" class="vin" type="number" min="1" value="'+(c.sellPrice||market)+'" style="margin-top:8px"><button class="btn gr" onclick="publishListing(\''+id+'\')">📢 Выставить</button><button class="btn gy" onclick="this.parentElement.parentElement.remove()">Отмена</button></div>';
+  document.body.appendChild(d);
+}
+function publishListing(id){
+  ensureListings();var c=null;for(var i=0;i<S.garage.length;i++)if(S.garage[i].id===id){c=S.garage[i];break}if(!c)return;
+  var inp=document.getElementById('listPrice'),price=Math.max(1,parseInt(inp&&inp.value)||0);if(!price){toast('Введите цену','red');return}
+  if(S.listings.some(function(x){return x.sourceId===id;})){toast('🚫 Машина уже выставлена','red');return}
+  var x={};Object.keys(c).forEach(function(k){x[k]=c[k]});x.id='listing_'+id+'_'+Date.now();x.sourceId=id;x.myListing=true;x.seller='Вы';x.buyPrice=price;x.sellPrice=price;x.marketPrice=c.marketPrice||calcMarketPrice(c);
+  S.listings.push(x);S.cars.push(x);save();var d=document.getElementById('listPriceModal');if(d)d.remove();toast('📢 Машина выставлена, в гараже она осталась','green');openApp('market');
+}
+function removeListing(id){ensureListings();var x=null;for(var i=0;i<S.listings.length;i++)if(S.listings[i].id===id){x=S.listings[i];S.listings.splice(i,1);break}if(x)S.cars=S.cars.filter(function(c){return c.id!==x.id});save();openApp('market');toast('Объявление снято','green')}
+
+function rMarket(){
+  if(!Array.isArray(S.cars))S.cars=[];
+  if(S.cars.length<500)refill();
+  if(!S.filter||typeof S.filter!=='object')S.filter={};
+  var f=S.filter;
+  if(typeof f.priceMin!=='number')f.priceMin=0;
+  if(typeof f.priceMax!=='number'||f.priceMax<=0)f.priceMax=999999999;
+  if(typeof f.yearMin!=='number')f.yearMin=2000;
+  if(typeof f.yearMax!=='number')f.yearMax=2025;
+  if(typeof f.city!=='string')f.city='all';
+  if(['price-asc','price-desc','year-asc','year-desc'].indexOf(f.sort)<0)f.sort='price-asc';
+  var list=S.cars.filter(function(c){
+    if(!c||typeof c.buyPrice!=='number')return false;
+    if(c.buyPrice<f.priceMin||c.buyPrice>f.priceMax)return false;
+    if(c.year<f.yearMin||c.year>f.yearMax)return false;
+    if(f.city!=='all'&&c.cityId!==f.city)return false;
+    return true;
+  });
+if(f.sort==='price-asc')list.sort(function(a,b){return a.buyPrice-b.buyPrice});else if(f.sort==='price-desc')list.sort(function(a,b){return b.buyPrice-a.buyPrice});else if(f.sort==='year-asc')list.sort(function(a,b){return a.year-b.year});else if(f.sort==='year-desc')list.sort(function(a,b){return b.year-a.year});
+ensureListings();var own=S.listings||[];var h='<div class="ic2" style="text-align:center;font-size:1.15rem;font-weight:800">🚗 Автомобилей в продаже: '+S.cars.length+'</div><div style="text-align:center;margin:10px 0 14px"><button class="btn bl" style="width:58px;height:58px;border-radius:50%;font-size:1.8rem;padding:0;margin:0 auto" onclick="openListCarPicker()">+</button><div style="font-size:.78rem;color:#777;margin-top:4px">Выставить машину</div></div><div class="ic2" style="display:flex;gap:8px"><button class="btn" style="background:#00aaff;margin:0;flex:1" onclick="openApp(\'filters\')">⚙️ Фильтры</button><button class="btn" style="background:#7a8b9e;margin:0;flex:1" onclick="resetFilters()">🔄 Сброс</button></div><div class="ic2">🚗 Найдено: <b>'+list.length+'</b></div>';
+if(list.length===0)return h+'<div class="emp">🚫 Ничего нет</div>';
+list.forEach(function(c){var ownCar=!!c.myListing;h+='<div class="card" onclick="openCar(\''+c.id+'\')">'+carImg(c)+ '<div class="b"><div class="pr">'+fmt(c.buyPrice)+' ₽</div><div class="y" style="color:#e67e22;font-weight:700">📊 Рынок: '+fmt(c.marketPrice||calcMarketPrice(c))+' ₽</div><div class="nm">'+c.brand+' '+c.model+'</div><div class="y">'+c.year+' · '+c.hp+' л.с. · VIN '+c.vin+'</div><div class="y">📍 '+city(c.cityId).name+' · '+c.seller+'</div><div style="margin-top:6px;color:#e67e22;font-weight:800">⚠️ Возможна поломка</div></div></div>'});return h}
+function resetFilters(){S.filter={priceMin:0,priceMax:999999999,yearMin:2000,yearMax:2025,city:'all',sort:'price-asc'};save();toast('🔄 Сброшено','green');openApp('market')}
+function rFilters(){var f=S.filter;var h='<div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:10px"><div style="font-weight:700;margin-bottom:10px">💰 Цена</div><div style="display:flex;gap:8px"><input class="vin" id="fPriceMin" type="number" placeholder="от" value="'+(f.priceMin||'')+'" style="margin:0"><input class="vin" id="fPriceMax" type="number" placeholder="до" value="'+(f.priceMax<999999999?f.priceMax:'')+'" style="margin:0"></div></div><div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:10px"><div style="font-weight:700;margin-bottom:10px">📅 Год</div><div style="display:flex;gap:8px"><input class="vin" id="fYearMin" type="number" value="'+f.yearMin+'" style="margin:0"><input class="vin" id="fYearMax" type="number" value="'+f.yearMax+'" style="margin:0"></div></div><div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:10px"><div style="font-weight:700;margin-bottom:10px">📍 Город</div><select class="vin" id="fCity" style="text-align:left"><option value="all">Все</option>';
+CITIES.forEach(function(c){h+='<option value="'+c.id+'"'+(f.city===c.id?' selected':'')+'>'+c.name+'</option>'});h+='</select></div><div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:10px"><div style="font-weight:700;margin-bottom:10px">🔤 Сортировка</div><select class="vin" id="fSort" style="text-align:left"><option value="price-asc"'+(f.sort==='price-asc'?' selected':'')+'>Дешёвые</option><option value="price-desc"'+(f.sort==='price-desc'?' selected':'')+'>Дорогие</option><option value="year-asc"'+(f.sort==='year-asc'?' selected':'')+'>Старые</option><option value="year-desc"'+(f.sort==='year-desc'?' selected':'')+'>Новые</option></select></div><button class="btn gr" onclick="applyFilters()">✅ Применить</button><button class="btn gy" onclick="openApp(\'market\')">← Назад</button>';return h}
+function applyFilters(){S.filter={priceMin:parseInt(document.getElementById('fPriceMin').value)||0,priceMax:parseInt(document.getElementById('fPriceMax').value)||999999999,yearMin:parseInt(document.getElementById('fYearMin').value)||2000,yearMax:parseInt(document.getElementById('fYearMax').value)||2025,city:document.getElementById('fCity').value,sort:document.getElementById('fSort').value};save();toast('✅ Применено','green');openApp('market')}
+function openCar(id){var c=null;for(var i=0;i<S.cars.length;i++)if(S.cars[i].id===id){c=S.cars[i];break}if(!c)return;var t=document.getElementById('at'),b=document.getElementById('ab');t.textContent=c.brand+' '+c.model;var h=carImg(c,'width:100%;border-radius:14px;margin-bottom:12px')+'<h2>'+c.brand+' '+c.model+'</h2><div style="color:#00a650;font-size:1.3rem;font-weight:800;margin:8px 0">'+fmt(c.buyPrice)+' ₽</div><div style="color:#e67e22;font-weight:700;margin:4px 0">📊 Рыночная цена: '+fmt(c.marketPrice||calcMarketPrice(c))+' ₽</div><div class="ic2" style="display:block">Год: '+c.year+'<br>Двигатель: '+c.hp+' л.с. ('+c.fuel+')<br>VIN: '+c.vin+'<br><b style="color:#e67e22">⚠️ Возможна поломка</b><br>Город: '+city(c.cityId).name+'</div>';
+if(c.myListing){h+='<div class="ic2" style="display:block;background:#eaf6ff;color:#176b91">📢 Это ваше объявление. Машина всё ещё находится в гараже.</div><button class="btn gy" onclick="removeListing(\''+c.id+'\')">🗑 Снять объявление</button>';}else{h+='<button class="btn bl" onclick="quickVin(\''+c.vin+'\')">🚔 VIN</button><button class="btn" onclick="openChat(\''+c.id+'\')">💬 Написать</button>';}
+h+='<button class="btn gy" onclick="openApp(\'market\')">← Назад</button>';b.innerHTML=h}
+
+function quickVin(v){openApp('gibdd');setTimeout(function(){var i=document.getElementById('vinIn');if(i)i.value=v},100)}
+function scheduleMeeting(carId){var c=null;for(var i=0;i<S.cars.length;i++)if(S.cars[i].id===carId){c=S.cars[i];break}if(!c)return;var day=prompt('День (например '+(S.day+1)+'):',''+(S.day+1));if(!day)return;var hour=prompt('Час (0-23):','12');if(!hour)return;S.meeting={day:parseInt(day),hour:parseInt(hour),seller:c.seller,carModel:c.model};save();toast('📅 Встреча на день '+day+' в '+hour+':00','green');openApp('market')}
+function buyCar(id){var i=-1;for(var k=0;k<S.cars.length;k++)if(S.cars[k].id===id){i=k;break}if(i<0)return;var c=S.cars[i];if(S.money<c.buyPrice){toast('Мало денег','red');return}if(S.garage.length>=cap()&&cap()>0){toast('🚫 Гараж полон','red');return}if(cap()===0&&S.garage.length>=1){toast('🚫 Купите гараж','red');return}S.money-=c.buyPrice;S.bought++;ensureBreakdowns(c);c.justBought=true;c.inspected=false;c.breakdowns=[];S.garage.push(c);S.cars.splice(i,1);S.log.push({type:'buy',text:'Куплена '+c.model,amount:c.buyPrice});save();upd();toast('✅ '+c.model+' куплена! Вызовите работника для диагностики','green');openApp('garage')}
+
+function breakdownParts(){return [
+  {key:'engine',name:'Двигатель',icon:'🛠️',base:.055},
+  {key:'hood',name:'Капот',icon:'🚗',base:.018},
+  {key:'battery',name:'Аккумулятор',icon:'🔋',base:.012},
+  {key:'wheel',name:'Колесо',icon:'🛞',base:.010},
+  {key:'headlight',name:'Фара',icon:'💡',base:.009},
+  {key:'brakes',name:'Тормоза',icon:'🛑',base:.025},
+  {key:'radiator',name:'Радиатор',icon:'🌡️',base:.020}
+]}
+function ensureBreakdowns(c){if(!c)return;if(!Array.isArray(c.breakdowns))c.breakdowns=[];if(c.inspected===undefined)c.inspected=false;if(c.justBought===undefined)c.justBought=false}
+function breakdownCost(c,p){var value=Math.max(50000,c.marketPrice||c.buyPrice||100000);var factor=p.base||.02;var tierMult=c.tier==='super'?1.8:(c.tier==='premium'?1.35:1);return Math.max(3000,Math.round(value*factor*tierMult/1000)*1000)}
+function runInspection(id){
+  var c=null;for(var i=0;i<S.garage.length;i++)if(S.garage[i].id===id){c=S.garage[i];break}if(!c)return;
+  ensureBreakdowns(c);if(c.inspected){toast('ℹ️ Диагностика уже проведена','green');return}
+  var parts=breakdownParts(), count=1+Math.floor(Math.random()*3), chosen=[];
+  while(chosen.length<count&&parts.length){var idx=Math.floor(Math.random()*parts.length);chosen.push(parts.splice(idx,1)[0])}
+  c.breakdowns=chosen.map(function(p){return {key:p.key,name:p.name,icon:p.icon,cost:breakdownCost(c,p),fixed:false}});
+  c.inspected=true;c.justBought=false;
+  save();openApp('garage');toast('🔧 Диагностика завершена: '+(c.breakdowns.length?'найдены поломки':'поломок не найдено'),'green');
+}
+function openGarageCar(id){
+  var c=null;for(var i=0;i<S.garage.length;i++)if(S.garage[i].id===id){c=S.garage[i];break}if(!c)return;ensureBreakdowns(c);
+  var old=document.getElementById('garageCarModal');if(old)old.remove();
+  var d=document.createElement('div');d.id='garageCarModal';d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:120;overflow:auto';
+  var h='<div style="position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:24px 24px 0 0;padding:18px 16px 26px;max-height:88vh;overflow:auto">'+carImg(c,'width:150px;height:100px;object-fit:cover;border-radius:14px;display:block;margin:0 auto 10px')+'<h2 style="text-align:center;margin:5px 0">'+c.brand+' '+c.model+'</h2><div style="text-align:center;color:#e67e22;font-weight:700">📊 Рыночная цена: '+fmt(c.marketPrice||calcMarketPrice(c))+' ₽</div>';
+  if(!c.inspected){h+='<div class="ic2" style="display:block;background:#fff4d6;margin-top:12px">🔧 Машина только куплена. Сначала проведите диагностику.</div><button class="btn bl" onclick="runInspection(\''+c.id+'\')">👨‍🔧 Провести обслуживание и диагностику</button>'}
+  else if(!c.breakdowns.length||c.breakdowns.every(function(x){return x.fixed})){h+='<div class="ic2" style="display:block;background:#e8f7e9;color:#287a32;margin-top:12px">✅ Все обнаруженные поломки устранены.</div>'}
+  else{h+='<div class="ic2" style="display:block;background:#ffe9e9;margin-top:12px"><b>⚠️ Обнаруженные поломки</b></div>';c.breakdowns.forEach(function(x){if(x.fixed)return;h+='<div style="display:flex;align-items:center;gap:10px;background:#f7f7f8;border-radius:14px;padding:11px;margin:8px 0"><div style="font-size:1.8rem">'+x.icon+'</div><div style="flex:1"><b>'+x.name+'</b><div style="color:#e74c3c;font-size:.84rem">Сломано · '+fmt(x.cost)+' ₽</div></div><button class="btn or" style="width:auto;margin:0" onclick="repairBreakdown(\''+c.id+'\',\''+x.key+'\')">Купить и заменить</button></div>'})}
+  h+='<button class="btn gy" onclick="this.parentElement.parentElement.remove()">Закрыть</button></div>';d.innerHTML=h;document.body.appendChild(d);
+}
+function repairBreakdown(id,key){var c=null;for(var i=0;i<S.garage.length;i++)if(S.garage[i].id===id){c=S.garage[i];break}if(!c||!Array.isArray(c.breakdowns))return;var x=null;for(var j=0;j<c.breakdowns.length;j++)if(c.breakdowns[j].key===key){x=c.breakdowns[j];break}if(!x||x.fixed)return;if(S.money<x.cost){toast('💰 Не хватает денег','red');return}S.money-=x.cost;x.fixed=true;c.condition=Math.min(100,(c.condition||70)+10);save();upd();toast('🔧 '+x.name+' заменён','green');openGarageCar(id)}
+
+function rGarage(){
+  if(S.garage.length===0)return '<div class="emp">🏚️ Пусто</div>';
+  var h='<div class="ic2">🚗 Машин: <b>'+S.garage.length+' / '+cap()+'</b></div>';
+  S.garage.forEach(function(c){ensureBreakdowns(c);var col=c.condition>70?'#27ae60':c.condition>45?'#f5a623':'#e74c3c';var pending=c.breakdowns.filter(function(x){return !x.fixed}).length;
+    h+='<div class="card" onclick="openGarageCar(\''+c.id+'\')">'+carImg(c)+'<div class="b"><div style="font-weight:800">'+c.model+'</div><div class="y">'+c.year+' · VIN '+c.vin+'</div><div style="margin:6px 0"><span style="background:'+col+';color:#fff;padding:3px 10px;border-radius:10px;font-size:.75rem;font-weight:700">⚙️ '+c.condition+'%</span></div><div style="color:#27ae60;font-weight:800">Продать: '+fmt(c.sellPrice)+' ₽</div>';
+    if(c.justBought&&!c.inspected)h+='<button class="btn bl" onclick="event.stopPropagation();runInspection(\''+c.id+'\')">👨‍🔧 Вызвать работника</button>';
+    else if(pending>0)h+='<div style="margin-top:7px;color:#e74c3c;font-weight:800">⚠️ Поломок: '+pending+' · Нажмите на машину</div>';
+    h+='<button class="btn gr" onclick="event.stopPropagation();sellCar(\''+c.id+'\')">💵 Продать</button><button class="btn bl" onclick="event.stopPropagation();callWorker(\''+c.id+'\')">👨‍🔧 Диагностика</button></div></div>';
+  });return h
+}
+function sellCar(id){var i=-1;for(var k=0;k<S.garage.length;k++)if(S.garage[k].id===id){i=k;break}if(i<0)return;var c=S.garage[i];var p=c.restricted?Math.round(c.sellPrice*0.6):c.sellPrice;S.money+=p;S.earned+=p;S.sold++;S.garage.splice(i,1);S.log.push({type:'sell',text:'Продана '+c.model,amount:p});S.reviews=(S.reviews||0)+1;S.rating=Math.min(5.0,(S.rating||5.0)+0.05+Math.random()*0.1);save();upd();toast('💵 +'+fmt(p)+' ₽','green');openApp('garage')}
+function workerCost(c){var base=c.buyPrice||100000;var tier=c.tier||'';var mult=tier==='super'?0.16:(tier==='premium'?0.12:0.08);return Math.max(25000,Math.round(base*mult/1000)*1000)}
+function callWorker(id){var c=null;for(var i=0;i<S.garage.length;i++)if(S.garage[i].id===id){c=S.garage[i];break}if(!c)return;ensureBreakdowns(c);var cost=workerCost(c);var old=document.getElementById('workerModal');if(old)old.remove();var d=document.createElement('div');d.id='workerModal';d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:120';d.innerHTML='<div style="position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:24px 24px 0 0;padding:22px 18px 28px"><div style="text-align:center;font-size:3rem">👨‍🔧</div><h2 style="text-align:center;margin:4px 0 8px">Обслуживание и диагностика</h2><div style="text-align:center;color:#666;margin-bottom:16px">'+c.brand+' '+c.model+'</div><div class="ic2" style="display:block;background:#eaf6ff">Работник проверит машину и покажет, какие детали сломаны.<br><b>Стоимость работы: '+fmt(cost)+' ₽</b></div><button class="btn bl" onclick="confirmWorker(\''+c.id+'\')">👨‍🔧 Вызвать за '+fmt(cost)+' ₽</button><button class="btn gy" onclick="this.parentElement.parentElement.remove()">❌ Отказаться</button></div>';document.body.appendChild(d)}
+function confirmWorker(id){var c=null;for(var i=0;i<S.garage.length;i++)if(S.garage[i].id===id){c=S.garage[i];break}if(!c)return;var cost=workerCost(c);if(S.money<cost){toast('💰 Не хватает денег','red');return}S.money-=cost;ensureBreakdowns(c);c.inspected=false;c.justBought=false;var d=document.getElementById('workerModal');if(d)d.remove();S.log.push({type:'service',text:'Диагностика '+c.model,amount:cost});save();upd();runInspection(id)}
+function repairCar(id){var i=-1;for(var k=0;k<S.garage.length;k++)if(S.garage[k].id===id){i=k;break}if(i<0)return;var c=S.garage[i];if(c.restricted){toast('⛔ Запрещено','red');return}if(c.condition>=100){toast('✅ Идеал','green');return}if(S.money<c.repairCost){toast('Мало денег','red');return}S.money-=c.repairCost;var boost=Math.floor(15+Math.random()*20);c.condition=Math.min(100,c.condition+boost);c.sellPrice+=Math.round(c.repairCost*1.4);save();upd();toast('🔧 +'+boost+'%','green');openApp('garage')}
+
+function rGibdd(){return '<div class="ic2" style="display:block;text-align:center;background:linear-gradient(135deg,#1c3b70,#2c5aa0);color:#fff;padding:20px"><div style="font-size:2.5rem">🚔</div><h2>ГИБДД</h2></div><input class="vin" id="vinIn" placeholder="VIN" maxlength="10"><button class="btn bl" onclick="checkVin()">🔍 ПРОВЕРИТЬ</button><div id="vinRes"></div>'}
+function checkVin(){var v=document.getElementById('vinIn').value.trim().toUpperCase();if(!v){toast('Введите VIN','red');return}var c=null;for(var k=0;k<S.cars.length;k++)if(S.cars[k].vin===v){c=S.cars[k];break}if(!c)for(var k=0;k<S.garage.length;k++)if(S.garage[k].vin===v){c=S.garage[k];break}var r=document.getElementById('vinRes');if(!c){r.innerHTML='<div class="ic2" style="display:block;margin-top:14px">🚫 Не найдена</div>';return}r.innerHTML='<div class="ic2" style="display:block;margin-top:14px"><b>'+c.brand+' '+c.model+'</b><br>Розыск: '+(c.wanted?'🚨 ДА':'✅')+'<br>ДТП: '+(c.accident?'⚠️':'✅')+'<br>Залог: '+(c.pledge?'💰':'✅')+'<br>Ограничения: '+(c.restricted?'⛔':'✅')+'</div>'}
+
+function rReal(){var h='<div class="ic2">🏠 Гаражей: <b>'+Object.keys(S.garages).length+'</b> · Мест: <b>'+cap()+'</b></div>';GARAGES.forEach(function(g){var ow=(S.garages[S.city]||[]).indexOf(g.id)>-1;h+='<div class="card"><div class="b"><div style="font-weight:800">'+g.emoji+' '+g.name+'</div><div class="y">'+g.desc+' · Мест: '+g.slots+'</div>'+(ow?'<div style="color:#27ae60;font-weight:700;margin-top:8px">✅ Куплено</div>':'<button class="btn gr" '+(S.money>=g.price?'':'disabled')+' onclick="buyGarage(\''+g.id+'\')">💰 '+fmt(g.price)+' ₽</button>')+'</div></div>'});return h}
+function buyGarage(id){for(var i=0;i<GARAGES.length;i++)if(GARAGES[i].id===id){var g=GARAGES[i];if(S.money<g.price)return;S.money-=g.price;if(!S.garages[S.city])S.garages[S.city]=[];S.garages[S.city].push(id);save();upd();toast('🏠 '+g.name,'green');openApp('realestate');return}}
+
+function rBank(){var h='<div class="ic2" style="display:block;text-align:center;background:linear-gradient(135deg,#ff9500,#ff6b00);color:#fff;padding:26px"><div>Баланс</div><h1>'+fmt(S.money)+' ₽</h1></div>';
+if(S.debt>0){h+='<div class="ic2" style="display:block;background:#ffe5e5"><b>💳 Долг:</b> '+fmt(S.debt)+' ₽<br>Срок: день '+S.debtDay+'<br>Просрочка: '+(S.debtOverdue||0)+' дн (+5%/день)</div><input class="vin" id="payAmount" type="number" placeholder="Сумма"><button class="btn gr" onclick="payPartial()">💸 Частично</button><button class="btn rd" onclick="payCredit()">💸 Всё</button>'}
+else{h+='<div class="ic2" style="display:block"><b>💳 Кредит</b><br>Ставка: <b>+20%</b>, срок 3 дня</div><input class="vin" id="creditAmount" type="number" placeholder="Сумма (мин 1000)"><button class="btn gr" onclick="takeCredit()">💳 Взять</button>'}
+return h}
+function takeCredit(){var a=parseInt(document.getElementById('creditAmount').value)||0;if(a<1000){toast('Мин 1000 ₽','red');return}var r=Math.round(a*1.2);if(!confirm('Взять '+fmt(a)+' ₽?\nВернуть '+fmt(r)))return;S.money+=a;S.debt=r;S.debtDay=S.day+3;S.debtOverdue=0;save();upd();toast('💳 Выдан','green');openApp('bank')}
+function payPartial(){var a=parseInt(document.getElementById('payAmount').value)||0;if(a<=0){toast('Введите сумму','red');return}if(S.money<a){toast('Мало денег','red');return}if(a>S.debt)a=S.debt;S.money-=a;S.debt-=a;if(S.debt<=0){S.debt=0;S.debtDay=0;S.debtOverdue=0;toast('✅ Погашено','green')}else toast('💸 Осталось: '+fmt(S.debt),'green');save();upd();openApp('bank')}
+function payCredit(){if(S.debt===0){toast('Долгов нет','green');return}if(S.money<S.debt){toast('Мало','red');return}S.money-=S.debt;S.debt=0;S.debtDay=0;S.debtOverdue=0;save();upd();toast('✅ Погашено','green');openApp('bank')}
+
+function rTravel(){var h='<div class="ic2">📍 Тут: <b>'+city(S.city).name+'</b></div>';CITIES.forEach(function(c){var cu=c.id===S.city;h+='<div class="card"><div class="b"><div style="font-weight:800">'+c.name+'</div><div class="y">'+(cu?'вы здесь':c.dist+' км · '+fmt(c.dist*15)+' ₽')+'</div>'+(cu?'':'<button class="btn bl" onclick="travelTo(\''+c.id+'\')">🚗 Поехать</button>')+'</div></div>'});return h}
+function travelTo(id){var c=city(id),cost=c.dist*15;if(S.money<cost){toast('Мало денег','red');return}S.money-=cost;S.city=id;refill();save();upd();toast('🚗 '+c.name,'green');openApp('market')}
+
+function rSleep(){var n=S.time>=22||S.time<6;if(n)return '<div style="background:linear-gradient(180deg,#0a1229,#1a1f3a);color:#fff;padding:20px;text-align:center;min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-size:4.5rem">🌙</div><div style="font-size:2.6rem;font-weight:800;margin:8px 0">'+tm()+'</div><div>День '+S.day+'</div><button style="background:linear-gradient(135deg,#4a7eff,#3060dd);color:#fff;border:none;padding:14px 30px;border-radius:40px;font-size:1rem;font-weight:700;margin-top:16px" onclick="sleepNow()">⏰ Спать</button></div>';return '<div style="background:linear-gradient(180deg,#87ceeb,#ffd89b);color:#333;padding:20px;text-align:center;min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-size:4rem">☀️</div><div style="font-size:2.6rem;font-weight:800;margin:8px 0">'+tm()+'</div><div>День '+S.day+'</div><p style="margin:16px">Спать с 22:00</p><button style="background:#555;color:#fff;border:none;padding:14px 30px;border-radius:40px;font-size:1rem;font-weight:700" disabled>⏳ Ждать</button></div>'}
+function sleepNow(){S.time=9;S.day++;checkDebt();if(S.alarm&&S.alarmDay>0&&S.day>S.alarmDay){S.alarm=0;S.alarmDay=0}if(S.meeting&&S.day>S.meeting.day){S.meeting=null}refill();save();upd();openApp('market')}
+function checkDebt(){if(!S.debt||S.debt<=0)return;if(S.day>(S.debtDay||0)){S.debtOverdue=(S.debtOverdue||0)+1;var pen=Math.round(S.debt*0.05);S.debt+=pen;var autoPay=Math.min(S.money,S.debt);S.money-=autoPay;S.debt-=autoPay;if(S.debt<=0){S.debt=0;S.debtDay=0;S.debtOverdue=0;toast('💳 Долг закрыт','green')}else toast('⚠️ Просрочка +'+fmt(pen),'red');save();upd()}}
+
+function rPromo(){var h='<div class="ic2" style="display:block;background:linear-gradient(135deg,#ff6b00,#ff0044);color:#fff;text-align:center;padding:20px"><h2>🎁 Промокоды</h2></div><input class="vin" id="promoIn" placeholder="Код"><button class="btn gr" onclick="activatePromo()">✨ Активировать</button>';return h}
+function activatePromo(){var v=document.getElementById('promoIn').value.trim().toLowerCase();if(!PROMOS[v]){toast('❌ Не найден','red');return}if(S.promo[v]){toast('⚠️ Уже использован','red');return}S.money+=PROMOS[v].amount;S.promo[v]={amount:PROMOS[v].amount};save();upd();toast('🎉 +'+fmt(PROMOS[v].amount),'green');openApp('promo')}
+
+function rCasino(){var h='<div class="ic2" style="display:block;text-align:center;background:linear-gradient(135deg,#8b0000,#ff0044);color:#fff;padding:20px"><div style="font-size:2.5rem">🎰</div><h2>КАЗИНО</h2></div><div class="ic2">💰 Баланс: <b>'+fmt(S.money)+' ₽</b></div><button class="btn" style="background:linear-gradient(135deg,#ffb400,#ff8800);color:#111" onclick="playCasino(10000)">🎲 10 000 ₽</button><button class="btn" style="background:linear-gradient(135deg,#ffb400,#ff8800);color:#111" onclick="playCasino(50000)">🎲 50 000 ₽</button><button class="btn" style="background:linear-gradient(135deg,#ffb400,#ff8800);color:#111" onclick="playCasino(100000)">🎲 100 000 ₽</button><div id="casinoRes"></div><div class="ic2" style="display:block;background:#fff4d6;font-size:.85rem;margin-top:14px">40% проигрыш · 45% x2 · 15% x3</div>';return h}
+function playCasino(b){if(S.money<b){toast('Мало денег','red');return}S.money-=b;var r=Math.random(),res=document.getElementById('casinoRes');if(r<0.4){res.innerHTML='<div class="ic2" style="display:block;background:#ffe5e5;text-align:center;padding:16px">😢 -'+fmt(b)+' ₽</div>';toast('😢 -'+fmt(b),'red')}else if(r<0.85){S.money+=b*2;res.innerHTML='<div class="ic2" style="display:block;background:#fff4d6;text-align:center;padding:16px">🎉 x2! +'+fmt(b)+' ₽</div>';toast('🎉 +'+fmt(b),'green')}else{S.money+=b*3;res.innerHTML='<div class="ic2" style="display:block;background:#f0fff4;text-align:center;padding:16px">💎 x3! +'+fmt(b*2)+' ₽</div>';toast('💎 ДЖЕКПОТ!','green')}save();upd()}
+
+var RATS={count:5};
+function rRats(){var h='<div class="ic2" style="display:block;text-align:center;background:linear-gradient(135deg,#4a1a1a,#8b0000);color:#fff;padding:20px"><div style="font-size:3rem">🐀</div><h2>КРЫСЫ</h2><p style="font-size:.85rem;opacity:.9">Найди крысу — потеряй!</p></div><div class="ic2">💰 <b>'+fmt(S.money)+' ₽</b></div><div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:10px"><div style="font-weight:700;margin-bottom:10px">Крыс:</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><button class="btn" style="background:'+(RATS.count===5?'#e74c3c':'#f5a623')+'" onclick="setRats(5)">5</button><button class="btn" style="background:'+(RATS.count===10?'#e74c3c':'#f5a623')+'" onclick="setRats(10)">10</button><button class="btn" style="background:'+(RATS.count===25?'#e74c3c':'#f5a623')+'" onclick="setRats(25)">25</button></div></div><input class="vin" id="ratsBet" type="number" placeholder="Ставка"><button class="btn gr" onclick="startRats()">▶️ НАЧАТЬ</button><div class="ic2" style="display:block;background:#fff4d6;font-size:.85rem;margin-top:14px">5=×2 · 10=×3 · 25=×5</div>';return h}
+function setRats(n){RATS.count=n;toast('🐀 '+n,'green');openApp('rats')}
+function startRats(){var b=parseInt(document.getElementById('ratsBet').value)||0;if(b<=0){toast('Введите ставку','red');return}if(S.money<b){toast('Мало денег','red');return}S.money-=b;save();upd();var mult=RATS.count===5?2:RATS.count===10?3:5;var pot=b;var tc=RATS.count*2;var field=[];for(var i=0;i<tc;i++)field.push(i<RATS.count?'rat':'safe');for(var i=field.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=field[i];field[i]=field[j];field[j]=t}field=field.slice(0,RATS.count);var op=0;var act=true;var t=document.getElementById('at'),bb=document.getElementById('ab');t.textContent='🐀 Крысы';function render(){var h='<div class="ic2">Ставка: <b>'+fmt(b)+'</b> · Макс: <b>'+fmt(b*mult)+'</b></div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;max-width:400px;margin:14px auto">';for(var i=0;i<field.length;i++){h+='<div id="rc'+i+'" onclick="openRat('+i+')" style="aspect-ratio:1;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;user-select:none">❓</div>'}h+='</div><button class="btn rd" onclick="exitRats()">🚪 ВЫЙТИ</button><div id="ratsMsg" class="ic2" style="display:block;text-align:center;margin-top:12px">Выбирай!</div>';bb.innerHTML=h}
+window.openRat=function(i){if(!act)return;var cell=document.getElementById('rc'+i);if(!cell||cell.dataset.done)return;cell.dataset.done='1';if(field[i]==='rat'){cell.textContent='🐀';cell.style.background='#ffebee';act=false;setTimeout(function(){document.getElementById('ratsMsg').innerHTML='<div style="color:#e74c3c;font-weight:800">😱 КРЫСА! -'+fmt(b)+'</div>';},300)}else{cell.textContent='💰';cell.style.background='#e8f5e9';op++;var cv=Math.round(pot*0.15);pot+=cv;document.getElementById('ratsMsg').innerHTML='<div style="color:#27ae60;font-weight:700">✅ Банк: '+fmt(pot)+'</div>';if(op>=RATS.count){act=false;S.money+=pot;save();upd();setTimeout(function(){document.getElementById('ratsMsg').innerHTML='<div style="color:#27ae60;font-weight:800">🎉 +'+fmt(pot)+'</div>';},300)}}}
+window.exitRats=function(){if(act&&confirm('Забрать '+fmt(pot)+'?')){S.money+=pot;save();upd();toast('💰 Забрано','green')}openApp('rats')};render()}
+</script><script>
+var BB={grid:[],score:0,figs:[],selected:-1,progress:0};
+function rBlock(){setTimeout(bbInit,50);return '<div style="background:linear-gradient(180deg,#1a3d7c,#0d1e40);min-height:100%;color:#fff;padding:14px;border-radius:14px"><div style="background:rgba(255,255,255,.12);border-radius:12px;padding:9px 12px;margin-bottom:10px;text-align:center;font-weight:800">🕐 Время игры: <span id="bbGameClock">'+tm()+'</span> · День '+S.day+' · ⚡ 2× скорость</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div id="bbScoreBox" style="background:rgba(255,255,255,.15);padding:8px 16px;border-radius:20px;font-weight:800;font-size:1.1rem">🏆 0</div><div style="background:rgba(255,215,0,.2);padding:6px 12px;border-radius:16px;font-size:.8rem;color:#ffd966">Рекорд: '+(S.bbRecord||0)+'</div></div><div style="text-align:center;font-size:.85rem;margin-bottom:8px">Собирай ряды! За 10 000 очков → +1 000 ₽</div><div id="bbField" style="background:#0a1a3a;border:3px solid #2c5aa0;border-radius:14px;padding:6px;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:0 auto;max-width:300px"></div><div id="bbFigs" style="display:flex;justify-content:space-around;margin-top:16px;gap:8px"></div><button onclick="bbNewGame()" style="width:100%;padding:14px;border:none;border-radius:12px;font-size:1rem;font-weight:800;margin-top:14px;background:linear-gradient(135deg,#ffb400,#ff8800);color:#111;cursor:pointer">🔄 Новая игра</button><div id="bbMsg" style="text-align:center;margin-top:10px;font-weight:700;min-height:24px"></div></div>'}
+function bbInit(){BB.grid=[];for(var i=0;i<25;i++)BB.grid.push(0);BB.figs=[];BB.selected=-1;bbGenFigs();bbRender()}
+function bbGenFigs(){BB.figs=[];for(var i=0;i<3;i++){var t=Math.floor(Math.random()*5);var c=Math.floor(Math.random()*5)+1;var s;if(t===0)s=[[1,1]];else if(t===1)s=[[1],[1]];else if(t===2)s=[[1,1],[1,1]];else if(t===3)s=[[1,0],[1,1]];else s=[[1,1,1]];BB.figs.push({shape:s,color:c,done:false})}}
+function bbColor(c){return['','#e74c3c','#f5a623','#27ae60','#9b59b6','#4a9eff'][c]||'#4a9eff'}
+function bbRender(){var f=document.getElementById('bbField');if(!f)return;var h='';for(var i=0;i<25;i++){h+='<div style="aspect-ratio:1;background:'+(BB.grid[i]?bbColor(BB.grid[i]):'#162e52')+';border-radius:6px" onclick="bbPlace('+i+')"></div>'}f.innerHTML=h;var fg=document.getElementById('bbFigs');var fh='';BB.figs.forEach(function(fig,idx){if(fig.done)return;fh+='<div style="background:'+(BB.selected===idx?'rgba(255,215,0,.15)':'rgba(255,255,255,.1)')+';padding:10px;border-radius:12px;cursor:pointer;border:2px solid '+(BB.selected===idx?'#ffd966':'transparent')+'" onclick="bbSelect('+idx+')">';for(var r=0;r<fig.shape.length;r++){fh+='<div style="line-height:0">';for(var c=0;c<fig.shape[r].length;c++){if(fig.shape[r][c])fh+='<span style="display:inline-block;width:16px;height:16px;margin:1px;border-radius:4px;background:'+bbColor(fig.color)+'"></span>';else fh+='<span style="display:inline-block;width:16px;height:16px;margin:1px"></span>'}fh+='</div>'}fh+='</div>'});fg.innerHTML=fh;var sb=document.getElementById('bbScoreBox');if(sb)sb.textContent='🏆 '+BB.score}
+function bbSelect(i){if(BB.figs[i]&&!BB.figs[i].done){BB.selected=i;bbRender()}}
+function bbPlace(pos){if(BB.selected<0){document.getElementById('bbMsg').innerHTML='⚠️ Выбери фигуру!';return}var fig=BB.figs[BB.selected];if(!fig||fig.done)return;var row=Math.floor(pos/5),col=pos%5;var rows=fig.shape.length,cols=fig.shape[0].length;if(row+rows>5||col+cols>5){document.getElementById('bbMsg').innerHTML='⚠️ Не влезает!';return}for(var r=0;r<rows;r++)for(var c=0;c<cols;c++)if(fig.shape[r][c]&&BB.grid[(row+r)*5+(col+c)]){document.getElementById('bbMsg').innerHTML='⚠️ Занято!';return}for(var r=0;r<rows;r++)for(var c=0;c<cols;c++)if(fig.shape[r][c])BB.grid[(row+r)*5+(col+c)]=fig.color;BB.score+=10;fig.done=true;BB.selected=-1;var cl=0;for(var r=0;r<5;r++){var full=true;for(var c=0;c<5;c++)if(!BB.grid[r*5+c]){full=false;break}if(full){for(var c=0;c<5;c++)BB.grid[r*5+c]=0;cl++}}for(var c=0;c<5;c++){var full=true;for(var r=0;r<5;r++)if(!BB.grid[r*5+c]){full=false;break}if(full){for(var r=0;r<5;r++)BB.grid[r*5+c]=0;cl++}}if(cl>0){BB.score+=cl*50;document.getElementById('bbMsg').innerHTML='🎉 +'+(cl*50)+'!'}else document.getElementById('bbMsg').innerHTML='';if(BB.score>=BB.progress+10000){BB.progress=Math.floor(BB.score/10000)*10000;S.money+=1000;toast('🎁 +1000 ₽ за '+BB.progress+' очков!','green');upd()}if(BB.score>(S.bbRecord||0))S.bbRecord=BB.score;S.bbScore=BB.score;save();if(BB.figs.every(function(f){return f.done}))bbGenFigs();bbRender()}
+function bbNewGame(){if(!confirm('Новая игра?'))return;BB.score=0;BB.progress=0;bbInit()}
+
+function rAlarm(){var h='<div class="ic2" style="display:block;text-align:center;background:linear-gradient(135deg,#1a1a2e,#0f3460);color:#fff;padding:24px"><div style="font-size:3rem">⏰</div><h2>БУДИЛЬНИК</h2></div><div class="ic2">🕐 Сейчас: <b>'+tm()+'</b></div>';if(S.alarm&&S.alarm>0){h+='<div class="ic2" style="background:#f0fff4;display:block"><b>⏰ Стоит:</b> '+String(Math.floor(S.alarm)).padStart(2,'0')+':'+String(Math.round((S.alarm%1)*60)).padStart(2,'0')+'<br>День: '+(S.alarmDay||S.day)+'</div><button class="btn rd" onclick="removeAlarm()">🗑 Убрать</button>'}else{h+='<div style="background:#fff;border-radius:14px;padding:14px"><div style="font-weight:700;margin-bottom:10px">Поставить:</div><div style="display:flex;gap:8px"><input class="vin" id="alarmH" type="number" placeholder="Часы" style="margin:0"><input class="vin" id="alarmM" type="number" placeholder="Мин" style="margin:0"></div><button class="btn gr" onclick="setAlarm()">⏰ Установить</button></div>'}return h}
+function setAlarm(){var hh=parseInt(document.getElementById('alarmH').value);var mm=parseInt(document.getElementById('alarmM').value)||0;if(isNaN(hh)||hh<0||hh>23){toast('Часы 0-23','red');return}if(mm<0||mm>59){toast('Мин 0-59','red');return}S.alarm=hh+(mm/60);S.alarmDay=S.day;save();toast('⏰ на '+String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0'),'green');openApp('alarm')}
+function removeAlarm(){S.alarm=0;S.alarmDay=0;save();toast('🔕 Убран','green');openApp('alarm')}
+
+function gameDate(){var d=new Date(2024,3,1);d.setDate(d.getDate()+Math.max(0,S.day-1));return d}
+function monthName(m){return ['ЯНВАРЬ','ФЕВРАЛЬ','МАРТ','АПРЕЛЬ','МАЙ','ИЮНЬ','ИЮЛЬ','АВГУСТ','СЕНТЯБРЬ','ОКТЯБРЬ','НОЯБРЬ','ДЕКАБРЬ'][m]}
+function calendarShift(n){S.calOffset=(S.calOffset||0)+n;openApp('calendar')}
+function rCalendar(){
+var gd=gameDate(), view=new Date(gd.getFullYear(),gd.getMonth()+(S.calOffset||0),1), y=view.getFullYear(), m=view.getMonth(), first=(view.getDay()+6)%7, days=new Date(y,m+1,0).getDate(), selected=(S.calOffset||0)===0?gd.getDate():-1;
+var h='<div style="background:#ed3b3b;color:#fff;padding:18px 14px;margin:-14px -14px 14px;display:flex;align-items:center;gap:12px"><button onclick="closeApp()" style="background:none;border:0;color:#fff;font-size:2rem;width:42px">‹</button><div style="font-size:1.35rem;font-weight:500">Календарь</div></div>';
+h+='<div style="background:#fff;padding:4px 0 14px;text-align:center"><div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px 14px"><button onclick="calendarShift(-1)" style="border:0;background:none;font-size:2rem;width:44px">‹</button><b style="font-size:1.45rem">'+monthName(m)+' '+y+'</b><button onclick="calendarShift(1)" style="border:0;background:none;font-size:2rem;width:44px">›</button></div>';
+h+='<div style="display:grid;grid-template-columns:repeat(7,1fr);color:#aaa;font-weight:700;font-size:.9rem"><div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div></div>';
+h+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px 2px;padding:10px 8px 4px">';
+for(var i=0;i<first;i++)h+='<div></div>';
+for(var d=1;d<=days;d++){
+ var isSel=d===selected, meet=S.meeting&&S.meeting.day===d&&view.getFullYear()===gameDate().getFullYear()&&view.getMonth()===gameDate().getMonth();
+ h+='<div style="height:48px;display:flex;align-items:center;justify-content:center"><button onclick="calendarPick('+d+')" style="width:46px;height:46px;border:0;border-radius:50%;background:'+(isSel?'#ed3b3b':'transparent')+';color:'+(isSel?'#fff':'#222')+';font-size:1.05rem;font-weight:'+(isSel?'800':'500')+';position:relative">'+d+(meet?'<span style="position:absolute;bottom:2px;left:50%;width:6px;height:6px;border-radius:50%;background:#27ae60;transform:translateX(-50%)"></span>':'')+'</button></div>';
+}
+h+='</div></div>';
+h+='<div style="background:#f1f3f8;margin:0 -14px;padding:18px 14px;min-height:220px"><h2 style="margin-bottom:18px">Встречи на '+(selected>0?selected:gd.getDate())+' '+monthName(m).toLowerCase()+':</h2>';
+if(S.meeting && ((S.calOffset||0)===0 ? S.meeting.day===gd.getDate() : false)) h+='<div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:10px"><b>📅 '+S.meeting.hour+':00 — '+S.meeting.seller+'</b><div style="color:#666;margin-top:5px">'+S.meeting.carModel+'</div></div>';
+else h+='<div style="text-align:center;color:#aaa;padding:30px 0;font-size:1.05rem"><div style="font-size:3.5rem;opacity:.45">🗓️</div>Нет запланированных встреч</div>';
+h+='<div style="background:#fff;border-radius:14px;padding:12px;margin-top:12px;text-align:center;font-weight:700">🕐 Сейчас в игре: '+tm()+' · День '+S.day+'</div></div>';
+return h;
+}
+function calendarPick(d){var gd=gameDate();if((S.calOffset||0)===0){toast('📅 '+d+' '+monthName(gd.getMonth()).toLowerCase()+' · '+tm(),'green');}else{toast('📅 '+d+' '+monthName(new Date(gd.getFullYear(),gd.getMonth()+(S.calOffset||0),1).getMonth()).toLowerCase(),'green')}}
+function nextDay(){S.time=9;S.day++;checkDebt();if(S.alarm&&S.alarmDay>0&&S.day>S.alarmDay){S.alarm=0;S.alarmDay=0;toast('⏰ Будильник сработал','blue')}if(S.meeting&&S.day>S.meeting.day){toast('📅 Встреча прошла','blue');S.meeting=null}refill();save();upd();openApp('market')}
+
+function rAch(){var h='<div class="ic2" style="background:linear-gradient(135deg,#f5b400,#ff8800);color:#fff;font-weight:800;font-size:1.1rem;text-align:center;display:block;padding:20px">⭐ Рейтинг: '+(S.rating||5.0).toFixed(1)+' / 5.0</div><div class="ic2">📝 Отзывов: <b>'+(S.reviews||0)+'</b></div><div class="ic2">🚗 Продано: <b>'+S.sold+'</b></div><div class="ic2">💰 Заработано: <b>'+fmt(S.earned)+' ₽</b></div>';var l=[['Первая покупка',S.bought>=1],['10 машин',S.bought>=10],['Первая продажа',S.sold>=1],['10 продаж',S.sold>=10],['Заработок 10K',S.earned>=10000],['100K',S.earned>=100000],['Миллион',S.earned>=1000000],['Рекорд 10K Блок',(S.bbRecord||0)>=10000],['Рейтинг 4.5+',(S.rating||5)>=4.5],['50 отзывов',(S.reviews||0)>=50]];l.forEach(function(a){h+='<div class="ic2">'+(a[1]?'✅':'⬜')+' '+a[0]+'</div>'});return h}
+function rLog(){if(S.log.length===0)return '<div class="emp">📋 Пусто</div>';var h='';S.log.slice().reverse().slice(0,30).forEach(function(e){h+='<div class="ic2">'+(e.type==='buy'?'🛒':'💵')+' '+e.text+' <b>'+(e.type==='buy'?'-':'+')+fmt(e.amount)+' ₽</b></div>'});return h}
+
+function openChat(carId){var c=null;for(var i=0;i<S.cars.length;i++)if(S.cars[i].id===carId){c=S.cars[i];break}if(!c)return;var ch=null;for(var i=0;i<S.chats.length;i++)if(S.chats[i].carId===carId){ch=S.chats[i];break}if(!ch){ch={id:'ch'+Date.now(),carId:carId,seller:c.seller,carSnapshot:c,messages:[{from:'them',text:'Здравствуйте! Машина продаётся.'}]};S.chats.push(ch);save()}else if(!ch.carSnapshot){ch.carSnapshot=c;save()}viewChat(ch.id)}
+function rChats(){if(S.chats.length===0)return '<div class="emp">💬 Чатов нет</div>';var h='';S.chats.slice().reverse().forEach(function(ch){var last=ch.messages[ch.messages.length-1];h+='<div class="card" onclick="viewChat(\''+ch.id+'\')"><div class="b"><b>'+ch.seller+'</b><div class="y">'+(last?last.text.substring(0,60):'')+'</div></div></div>'});return h}
+function getChat(id){for(var i=0;i<S.chats.length;i++)if(S.chats[i].id===id)return S.chats[i];return null}
+function chatCar(ch){
+  if(!ch)return null;
+  if(ch.carSnapshot)return ch.carSnapshot;
+  for(var i=0;i<S.cars.length;i++)if(S.cars[i].id===ch.carId)return S.cars[i];
+  return null;
+}
+function buyFromChat(id){
+  var ch=getChat(id),c=chatCar(ch);
+  if(!ch||!c)return;
+  if(c.myListing){toast('🚫 Нельзя купить собственное объявление','red');return}
+  if(S.money<c.buyPrice){toast('💰 Не хватает денег','red');return}
+  if(S.garage.length>=cap()&&cap()>0){toast('🚫 Гараж полон','red');return}
+  if(cap()===0&&S.garage.length>=1){toast('🚫 Купите гараж','red');return}
+  S.money-=c.buyPrice;
+  S.bought++;
+  var ix=-1;
+  for(var i=0;i<S.cars.length;i++)if(S.cars[i].id===c.id){ix=i;break}
+  if(ix>=0)S.cars.splice(ix,1);
+  ch.carSnapshot=c;
+  ch.bought=true;
+  ch.agreedPrice=c.buyPrice;
+  addChatMsg(ch,'me','Хорошо, беру машину!');
+  addChatMsg(ch,'them','Хорошо, по рукам! Приезжайте, договорились.');
+  ensureBreakdowns(c);c.justBought=true;c.inspected=false;c.breakdowns=[];S.garage.push(c);
+  S.log.push({type:'buy',text:'Куплена '+c.model,amount:c.buyPrice});
+  save();upd();viewChat(id);toast('✅ Покупка оформлена','green');
+}
+function viewChat(id){
+  var ch=getChat(id);if(!ch)return;
+  var t=document.getElementById('at'),b=document.getElementById('ab');
+  t.textContent=ch.seller;
+  var c=chatCar(ch);
+  var h='<div style="background:#eee;padding:10px;margin:-10px -10px 10px">';
+  if(c){
+    h+='<div style="background:#fff;border-radius:12px;padding:10px;display:flex;align-items:center;gap:10px;overflow:hidden">'+
+      '<div style="width:120px;height:78px;flex:0 0 120px;overflow:hidden;border-radius:9px">'+carImg(c)+'</div>'+
+      '<div><b>'+c.brand+' '+c.model+'</b><div style="color:#777">'+fmt(c.buyPrice)+' ₽</div></div></div>';
+  }
+  h+='</div><div class="ic2" style="display:block;background:#fff4d6;font-size:.82rem">🛡️ Никогда не отправляйте предоплату, вы можете потерять свои деньги!</div><div style="margin:10px 0">';
+  ch.messages.forEach(function(m){
+    h+='<div style="padding:11px 14px;border-radius:16px;margin-bottom:8px;font-size:.95rem;max-width:82%;'+
+      (m.from==='me'?'background:#168cff;color:#fff;margin-left:auto':'background:#fff')+'">'+m.text+
+      (m.time?'<div style="font-size:.72rem;opacity:.65;margin-top:5px;text-align:right">'+m.time+'</div>':'')+'</div>';
+  });
+  h+='</div>';
+  if(c&&!ch.bought){
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">'+
+      '<button class="btn" style="background:#dcb5eb;color:#5b2380" onclick="openExchange(\''+ch.id+'\')">↔️ Обмен</button>'+
+      '<button class="btn bl" onclick="openBargain(\''+ch.id+'\')">🏷️ Торговаться</button></div>'+
+      '<button class="btn gr" onclick="buyFromChat(\''+ch.id+'\')">💰 Купить</button>';
+  }else if(c&&ch.bought){
+    h+='<div class="ic2" style="display:block;background:#e5f7eb;color:#16803a;font-weight:700">✅ Машина куплена. Можно назначить встречу с продавцом.</div>';
+  }
+  if(ch.exchangeDone||ch.bargainAccepted||ch.bought){
+    h+='<button class="btn bl" onclick="openMeetingPicker(\''+ch.id+'\')">📅 Назначить встречу</button>';
+  }
+  h+='<button class="btn gr" onclick="botReply(\''+ch.id+'\')">💬 Написать продавцу</button>';
+  b.innerHTML=h;
+}
+function addChatMsg(ch,from,text){ch.messages.push({from:from,text:text,time:tm()})}
+function openExchange(id){var ch=getChat(id);if(!ch)return;if(!S.garage||S.garage.length===0){toast('🚫 Нет машины!!','red');return}var c=chatCar(ch);if(!c){toast('Машина продавца уже продана','red');return}var b=document.getElementById('ab');var h='<div style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:80" onclick="this.remove()"><div onclick="event.stopPropagation()" style="position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:24px 24px 0 0;padding:20px;max-height:80vh;overflow:auto"><h2 style="margin:0 0 6px">↔️ Обмен</h2><div style="color:#777;margin-bottom:14px">Выберите свою машину из гаража</div><div style="background:#f4f5f7;border-radius:14px;padding:12px;margin-bottom:12px"><b>Получите:</b> '+c.brand+' '+c.model+'<br><span style="color:#777">'+fmt(c.buyPrice)+' ₽</span></div>';
+S.garage.forEach(function(g){h+='<div style="display:flex;align-items:center;gap:10px;background:#f7f7f8;border-radius:14px;padding:10px;margin:8px 0">'+carImg(g)+'<div style="flex:1"><b>'+g.brand+' '+g.model+'</b><div style="color:#777">'+fmt(g.sellPrice||g.buyPrice||0)+' ₽</div></div><button class="btn" style="width:auto;margin:0;background:#dcb5eb;color:#5b2380" onclick="sendExchange(\''+id+'\',\''+g.id+'\')">Выбрать</button></div>'});h+='<button class="btn gy" onclick="this.parentElement.parentElement.remove()">Отмена</button></div></div>';b.insertAdjacentHTML('beforeend',h)}
+function sendExchange(id,gid){var ch=getChat(id),c=chatCar(ch),mine=null,mi=-1;if(!ch||!c)return;for(var i=0;i<S.garage.length;i++)if(S.garage[i].id===gid){mine=S.garage[i];mi=i;break}if(!mine){toast('🚫 Нет машины!!','red');return}if(mi<0)return;S.garage.splice(mi,1);S.cars=S.cars.filter(function(x){return x.id!==c.id});S.garage.push(c);addChatMsg(ch,'me','Предлагаю обменять '+mine.brand+' '+mine.model+' на '+c.brand+' '+c.model+'.');addChatMsg(ch,'them','Отлично! Приезжайте, обменяем машины.');ch.exchangeDone=true;save();upd();viewChat(id);toast('✅ Обмен согласован!','green')}
+function openBargain(id){var ch=getChat(id),c=chatCar(ch);if(!ch||!c)return;var old=document.getElementById('bargainModal');if(old)old.remove();var d=document.createElement('div');d.id='bargainModal';d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:90';d.innerHTML='<div style="position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:24px 24px 0 0;padding:22px 18px 28px"><h2 style="margin:0 0 8px">🏷️ Торговаться</h2><div style="color:#777;margin-bottom:18px">Текущая цена продавца: <b>'+fmt(c.buyPrice)+' ₽</b></div><b>Ваше предложение</b><div style="display:flex;align-items:center;gap:10px;margin-top:12px"><button class="btn gy" style="width:56px" onclick="changeBargain(-50000)">−</button><input id="bargainAmount" type="number" value="'+c.buyPrice+'" style="flex:1;border:2px solid #222;border-radius:14px;padding:14px;text-align:center;font-size:1.25rem;font-weight:800"><button class="btn gy" style="width:56px" onclick="changeBargain(50000)">+</button></div><div id="bargainHint" style="background:#e8f7e9;color:#287a32;border-radius:14px;padding:13px;margin:14px 0;font-weight:700">✅ Предложение не ниже текущей цены продавца</div><button class="btn bl" onclick="sendBargain(\''+id+'\')">Предложить</button><button class="btn gy" onclick="this.parentElement.parentElement.remove()">Отмена</button></div>';document.body.appendChild(d);document.getElementById('bargainAmount').oninput=function(){updateBargainHint(c.buyPrice)}}
+function changeBargain(n){var x=document.getElementById('bargainAmount');if(!x)return;x.value=Math.max(0,(parseInt(x.value)||0)+n);var ch=null;var d=document.getElementById('bargainModal');if(d)updateBargainHint(0)}
+function updateBargainHint(price){var x=document.getElementById('bargainAmount'),h=document.getElementById('bargainHint');if(!x||!h)return;var a=parseInt(x.value)||0;if(price&&a>=price)h.innerHTML='✅ Предложение не ниже текущей цены продавца';else if(price&&a>=price*.9)h.innerHTML='🟡 Продавец может немного уступить';else h.innerHTML='⚠️ Предложение довольно низкое'}
+function sendBargain(id){var ch=getChat(id),c=chatCar(ch),x=document.getElementById('bargainAmount');if(!ch||!c||!x)return;var a=Math.max(0,parseInt(x.value)||0);if(a<=0){toast('Введите цену','red');return}if(S.money<a){toast('💰 Не хватает денег','red');return}var old=document.getElementById('bargainModal');if(old)old.remove();addChatMsg(ch,'me','Предлагаю '+fmt(a)+' ₽ за '+c.brand+' '+c.model+'.');if(a>=c.buyPrice*.96){addChatMsg(ch,'them','Отлично! Приезжайте, договорились за '+fmt(a)+' ₽.');ch.bargainAccepted=true;ch.agreedPrice=a}else if(a>=c.buyPrice*.88){var counter=Math.round(c.buyPrice*.95);addChatMsg(ch,'them','Могу уступить до '+fmt(counter)+' ₽.');ch.counterPrice=counter}else{addChatMsg(ch,'them','К сожалению, так дёшево не смогу продать.');}save();viewChat(id)}
+function openMeetingPicker(id){
+  var ch=getChat(id),c=chatCar(ch);if(!ch||!c)return;
+  var old=document.getElementById('meetingModal');if(old)old.remove();
+  var today=S.day||1, selectedDay=today, selectedHour=null;
+  var cityName='Город продавца';
+  try{cityName=city(c.cityId).name}catch(e){}
+  var d=document.createElement('div');d.id='meetingModal';
+  d.style.cssText='position:fixed;inset:0;background:#fff;z-index:100;overflow:auto;font-family:inherit';
+  function dates(){
+    var x='';
+    for(var k=0;k<6;k++){
+      var dd=today+k;
+      x+='<button data-day="'+dd+'" class="meetDay" style="min-width:112px;height:120px;border-radius:20px;border:2px solid '+(dd===today?'#08aeea':'#ddd')+';background:'+(dd===today?'#10ace3':'#f7f7f7')+';color:'+(dd===today?'#fff':'#222')+';padding:10px" onclick="selectMeetDay('+dd+')"><div style="font-size:.8rem;font-weight:700">'+(k===0?'СЕГОДНЯ':'АПР.')+'</div><b style="font-size:2rem">'+dd+'</b></button>';
+    }
+    return x;
+  }
+  var times=[9,10,11,12,13,14,15,16,17,18,19,20];
+  var th='';
+  times.forEach(function(hr){
+    th+='<button data-hour="'+hr+'" class="meetTime" style="padding:14px 8px;border:0;border-radius:12px;background:#e3e3e3;color:#888;font-size:1rem;font-weight:700;text-decoration:line-through" onclick="selectMeetTime('+hr+',this)">'+String(hr).padStart(2,'0')+':00</button>';
+  });
+  d.innerHTML='<div style="background:#08ace3;color:#fff;padding:20px 18px;font-size:1.5rem;font-weight:700">← &nbsp;Запись на осмотр</div>'+
+    '<div style="background:#e5f5fd;color:#16a7dc;padding:24px 30px;font-size:1.05rem;line-height:1.45">ⓘ &nbsp;Машина находится в г. '+cityName+'.<br>Убедитесь, что успеете доехать!</div>'+
+    '<div style="padding:24px 30px 120px">'+
+    '<div style="font-size:1.15rem;margin-bottom:16px">🕘 <b>Сейчас в игре: '+tm()+'</b></div>'+
+    '<div style="font-size:1.15rem;margin-bottom:22px">📍 <b>Вы сейчас в: '+city(S.city).name+'</b></div>'+
+    '<div style="border:2px solid #ddd;border-radius:18px;padding:20px;margin-bottom:22px"><div style="color:#aaa">Город встречи:</div><div style="font-size:1.45rem;font-weight:800;margin-top:6px">'+cityName+' <span style="float:right;color:#0aaee5;font-size:1rem">📝 Выбрать город</span></div></div>'+
+    '<h2>Выберите дату</h2><div style="display:flex;gap:14px;overflow:auto;padding-bottom:8px">'+dates()+'</div>'+
+    '<h2 style="margin-top:28px">Выберите время</h2><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">'+th+'</div>'+
+    '<button id="meetConfirm" disabled class="btn bl" style="position:fixed;left:30px;right:30px;bottom:24px;width:auto;margin:0;height:74px;border-radius:22px;font-size:1.15rem;font-weight:800;box-shadow:0 4px 12px #aaa">Выберите дату и время</button>'+
+    '</div>';
+  document.body.appendChild(d);
+  window._meetingPick={id:id,day:selectedDay,hour:selectedHour,price:c.buyPrice};
+  document.getElementById('meetConfirm').onclick=function(){
+    var q=window._meetingPick;if(!q||q.hour===null)return;
+    S.meeting={day:q.day,hour:q.hour,seller:ch.seller,carModel:c.model,cityId:c.cityId};
+    addChatMsg(ch,'them','Отлично! Приезжайте в '+String(q.hour).padStart(2,'0')+':00, встречаемся в '+cityName+'.');
+    save();viewChat(id);toast('📅 Встреча назначена','green');
+  };
+}
+function selectMeetDay(day){
+  if(!window._meetingPick)return;
+  window._meetingPick.day=day;
+  document.querySelectorAll('.meetDay').forEach(function(x){
+    var on=parseInt(x.getAttribute('data-day'))===day;
+    x.style.background=on?'#10ace3':'#f7f7f7';x.style.color=on?'#fff':'#222';x.style.borderColor=on?'#08aeea':'#ddd';
+  });
+}
+function selectMeetTime(hour,el){
+  if(!window._meetingPick)return;
+  window._meetingPick.hour=hour;
+  document.querySelectorAll('.meetTime').forEach(function(x){
+    x.style.background='#e3e3e3';x.style.color='#888';x.style.textDecoration='line-through';
+  });
+  el.style.background='#10ace3';el.style.color='#fff';el.style.textDecoration='none';
+  var q=document.getElementById('meetConfirm');
+  q.disabled=false;q.textContent='Назначить за '+fmt(window._meetingPick.price)+' ₽';
+}
+function scheduleChatMeeting(id){openMeetingPicker(id)}
+function botReply(id){var ch=getChat(id);if(!ch)return;if(ch.bought||ch.bargainAccepted||ch.exchangeDone){addChatMsg(ch,'me','Хорошо, договорились!');addChatMsg(ch,'them','Отлично! Приезжайте, договорились.');}else{addChatMsg(ch,'me','Да, договоримся!');addChatMsg(ch,'them','Хорошо, обсудим условия.');}save();viewChat(id)}
+
+function rMusic(){var h='<div class="ic2" style="display:block;text-align:center;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:20px"><div style="font-size:3rem">🎵</div><h3>Музыка</h3></div>';var M=[{n:'Summer Vibes',u:'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'},{n:'Night Drive',u:'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'},{n:'City Lights',u:'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'},{n:'Ocean Waves',u:'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'},{n:'Mountain Road',u:'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3'}];M.forEach(function(m,i){h+='<div class="card" onclick="playMusic(\''+m.u+'\',\''+m.n+'\')"><div class="b">🎵 <b>'+(i+1)+'. '+m.n+'</b></div></div>'});h+='<div id="audioBox"></div>';return h}
+function playMusic(url,name){document.getElementById('audioBox').innerHTML='<div class="ic2" style="display:block;margin-top:14px"><b>▶️ '+name+'</b><audio controls autoplay style="width:100%;margin-top:10px"><source src="'+url+'"></audio></div>'}
+
+function rDev(){return '<div class="ic2" style="display:block;text-align:center;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:24px"><div style="font-size:3rem">👨‍💻</div><h2>Матвей</h2><p>Разработчик AvtoBuy</p></div><div class="ic2" style="display:block;line-height:1.6">Всем привет! Это моя первая игра!<br><br><b>🎮 Как играть:</b><br><br><b>🚗 AvtoBuy</b> — покупай машины. Фильтры: цена, год, город.<br><br><b>🏠 Гараж</b> — продавай дороже. Без гаража не влезут!<br><br><b>🚔 ГИБДД</b> — проверь VIN.<br><br><b>🏢 Недвижимость</b> — гаражи 5 типов.<br><br><b>💰 П-Банк</b> — кредит +20%, 3 дня, просрочка +5%/день.<br><br><b>🗺️ Поездки</b> — другие города.<br><br><b>🎰 Казино</b> — 40% проигрыш, 45% x2, 15% x3.<br><br><b>🐀 Крысы</b> — 5/10/25. Не попал — банк растёт!<br><br><b>🎮 Блокбастер</b> — пазл 5×5. За 10 000 очков +1000 ₽.<br><br><b>⏰ Будильник</b>, <b>📆 Календарь</b> — планируй.<br><br><b>📅 Встреча</b> — назначай дату с продавцом.<br><br><b>⭐ Рейтинг</b> — чем выше, тем чаще боты пишут.<br><br><b>🎁 Промо</b> — код <b>matvey6767</b> = 1 000 000 ₽<br><br><b>🌙 Сон</b> — с 22:00.<br><br><b>📞 Звонок (внизу)</b> — скидка 5-8%<br><br><b>📷 Камера (внизу)</b> — заставка<br><br>🎵 ТикТок: <b>matvey47650</b></div><button class="btn" onclick="window.open(\'https://www.tiktok.com/@matvey47650\',\'_blank\')">📱 ТикТок</button>'}
+function openTikTok(){
+if(!navigator.onLine){toast('📡 Нет интернета','red');return}
+var old=document.getElementById('ttW');if(old)old.remove();
+var d=document.createElement('div');d.id='ttW';
+d.style.cssText='position:fixed;inset:0;background:#000;z-index:150;overflow-y:auto;color:#fff;font-family:Arial,sans-serif';
+var vids=[
+ {id:'6718335390845095173',au:'@scout2015',cap:'TikTok — ролик ✨'},
+ {id:'7080213458555737986',au:'@user_id',cap:'TikTok — видео 2 🎬'},
+ {id:'7080217258529732386',au:'@user_id',cap:'TikTok — видео 3 🎮'},
+ {id:'7143642950608768261',au:'@skooobnba',cap:'Спортивный ролик 🏀'},
+ {id:'6883928553902165253',au:'@nba2k',cap:'Игровой ролик 🎮'}
+];
+while(vids.length<50){var base=vids[vids.length%5];vids.push({id:base.id,au:base.au,cap:base.cap+' · подборка '+(vids.length+1)});}
+var h='<div style="position:sticky;top:0;z-index:5;background:#000;padding:12px 14px;border-bottom:1px solid #222;display:flex;align-items:center;gap:8px">'+
+'<button onclick="document.getElementById(\'ttW\').remove()" style="background:#222;color:#fff;border:0;border-radius:10px;padding:9px 12px;font-size:18px">✕</button>'+
+'<b style="font-size:20px">🎵 TikTok</b><span style="margin-left:auto;font-size:12px;color:#aaa">🌐 Интернет</span></div>'+
+'<div style="padding:12px;background:#111"><button onclick="window.open(\'https://www.tiktok.com/\',\'_blank\')" style="width:100%;padding:13px;border:0;border-radius:12px;background:#fe2c55;color:#fff;font-weight:700;font-size:15px">Открыть TikTok в браузере ↗</button></div>'+
+'<div style="padding:10px 12px;color:#aaa;font-size:12px">В игре показываются официальные TikTok-видео. Для просмотра нужен интернет.</div>';
+vids.forEach(function(v){
+ h+='<div style="background:#000;margin-bottom:14px">'+
+ '<iframe title="TikTok video" style="width:100%;height:620px;border:0;display:block;background:#111" src="https://www.tiktok.com/player/v1/'+v.id+'?controls=1&description=1&music_info=1&fullscreen_button=1" allow="fullscreen" loading="lazy"></iframe>'+
+ '<div style="padding:10px 14px;background:#111"><b>'+v.au+'</b><div style="opacity:.8;margin-top:4px;font-size:13px">'+v.cap+'</div></div></div>';
+});
+d.innerHTML=h;document.body.appendChild(d)
+}
+function callSeller(){var list=S.cars;if(list.length===0){toast('📞 Некуда звонить','red');return}var c=list[Math.floor(Math.random()*list.length)];if(!confirm('📞 Позвонить '+c.seller+'?\n'+c.model+' ('+fmt(c.buyPrice)+')'))return;toast('📞 Звоним...','green');setTimeout(function(){var disc=Math.round(c.buyPrice*(0.92+Math.random()*0.06));c.buyPrice=disc;save();upd();toast('📞 Скинул до '+fmt(disc),'green')},2500)}
+function openCamera(){var inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.capture='environment';inp.onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){var t=document.getElementById('at'),b=document.getElementById('ab');document.getElementById('aw').classList.add('op');t.textContent='📷 Камера';var h='<div style="text-align:center"><img src="'+ev.target.result+'" style="width:100%;border-radius:14px;margin-bottom:14px"><button class="btn gr" onclick="setWall(\''+ev.target.result+'\')">💾 На заставку</button>';if(S.wallpaper)h+='<button class="btn rd" onclick="removeWall()">🗑 Убрать</button>';h+='<button class="btn bl" onclick="openCamera()">📷 Снова</button><button class="btn gy" onclick="closeApp()">← Назад</button></div>';b.innerHTML=h};r.readAsDataURL(f)};inp.click()}
+function setWall(d){S.wallpaper=d;save();document.body.style.background='url('+d+') center/cover fixed';toast('🖼️ Установлено','green');closeApp()}
+function removeWall(){S.wallpaper='';document.body.style.background='linear-gradient(180deg,#a9b8f5,#d898cc)';save();toast('🗑 Убрано','green');closeApp()}
+
+function rSettings(){var h='<button class="btn rd" onclick="resetGame()">🔄 Начать заново</button><div class="ic2">Версия <b>7.0</b></div><div class="ic2">Баланс: <b>'+fmt(S.money)+' ₽</b></div><div class="ic2">Город: <b>'+city(S.city).name+'</b></div><div class="ic2">Время: <b>'+tm()+'</b> · День <b>'+S.day+'</b></div><div class="ic2">⭐ Рейтинг: <b>'+(S.rating||5).toFixed(1)+'</b></div>';if(S.debt>0)h+='<div class="ic2" style="background:#ffe5e5">💳 Долг: <b>'+fmt(S.debt)+' ₽</b> до дня '+S.debtDay+'</div>';if(!S.devMode)h+='<input class="vin" id="devIn" placeholder="Код разработчика"><button class="btn" style="background:#ffb400;color:#111" onclick="checkDev()">🔓 Открыть</button>';else h+=rDevPanel();return h}
+function rDevPanel(){return '<div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #00d9ff;border-radius:18px;padding:18px;margin-top:14px"><h3 style="color:#00d9ff;text-align:center;margin-bottom:14px">⚡ DEV ⚡</h3><button class="btn gr" onclick="devMoney(100000)">💰 +100 000 ₽</button><button class="btn gr" onclick="devMoney(1000000)">💎 +1 000 000 ₽</button><button class="btn" style="background:#ffb400;color:#111" onclick="devMoney(10000000)">👑 +10 000 000 ₽</button><button class="btn" onclick="devSpawn()">🏎️ Спавн машины</button><button class="btn rd" onclick="devClose()">🚪 Закрыть</button></div>'}
+function checkDev(){var v=document.getElementById('devIn').value.trim();if(v===DEV){S.devMode=true;save();toast('🔓 Открыто','green');openApp('settings')}else toast('❌ Неверно','red')}
+function devMoney(a){S.money+=a;save();upd();toast('💰 +'+fmt(a),'green');openApp('settings')}
+function devSpawn(){S.garage.push(genCar());save();toast('🚗 Добавлено','green');openApp('settings')}
+function devClose(){S.devMode=false;save();openApp('settings')}
+function resetGame(){if(!confirm('Заново?'))return;try{localStorage.removeItem(SAVE)}catch(e){}location.reload()}
+
+
+function makeNick(){
+  var a=['Матвей','Алекс','Дима','Макс','Иван','Саша','Андрей','Никита','Кирилл','Миша','Егор','Рома','Артур','Денис','Стас'];
+  var b=['Turbo','Drive','Auto','Racer','Cars','Speed','Motor','Pilot','Garage','Road'];
+  var n=a[Math.floor(Math.random()*a.length)]+'_'+b[Math.floor(Math.random()*b.length)]+'_'+(100+Math.floor(Math.random()*900));
+  return n;
+}
+function ensureNick(){if(!S.nick){S.nick=makeNick();save()}}
+function friendPlayers(){
+  var names=['TurboDrive_204','AutoRacer_731','BMWKing_418','SpeedCar_562','GaragePro_905','RoadPilot_337','MotorFan_684','CarBoss_129','FastDrive_776','AutoMax_451','StreetRacer_823','CarMaster_266'];
+  var out=[];for(var i=0;i<names.length;i++)out.push({nick:names[i],money:100000+Math.floor(Math.random()*900000),online:Math.random()>.25});
+  return out;
+}
+function friendSearch(){
+  ensureNick();
+  if(!navigator.onLine){toast('Нет Интернета!','red');renderFriends();return}
+  var q=(document.getElementById('friendNick')?.value||'').trim().toLowerCase();
+  if(!q){toast('Введите Ник','red');return}
+  var list=friendPlayers().filter(function(x){return x.nick.toLowerCase()===q||x.nick.toLowerCase().indexOf(q)>=0});
+  var box=document.getElementById('friendResults');
+  if(!list.length){box.innerHTML='<div class="ic2" style="display:block;text-align:center">😕 Игрок не найден</div>';return}
+  box.innerHTML=list.map(function(x){return '<div class="ic2" style="display:flex;align-items:center;gap:10px;text-align:left"><div style="font-size:2rem">👤</div><div style="flex:1"><b>'+x.nick+'</b><div style="font-size:.78rem;color:'+(x.online?'#27ae60':'#888')+'">● '+(x.online?'В сети':'Не в сети')+'</div></div><button class="btn bl" style="width:auto;margin:0" onclick="openFriendGift(\''+x.nick+'\')">Подарить</button></div>'}).join('');
+}
+function openFriendGift(nick){
+  if(!navigator.onLine){toast('Нет Интернета!','red');return}
+  var old=document.getElementById('friendGiftModal');if(old)old.remove();
+  var d=document.createElement('div');d.id='friendGiftModal';d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:130';
+  var h='<div style="position:absolute;left:8px;right:8px;bottom:8px;background:#fff;border-radius:22px;padding:18px;max-height:85vh;overflow:auto"><h2 style="margin:0 0 8px">🎁 Подарок для '+nick+'</h2>';
+  h+='<div style="font-size:.85rem;color:#777;margin-bottom:12px">Ваш баланс: <b>'+fmt(S.money)+' ₽</b></div>';
+  h+='<button class="btn gr" onclick="giftMoney(\''+nick+'\')">💰 Подарить деньги</button>';
+  h+='<div style="margin-top:14px;font-weight:800">🚗 Подарить машину</div>';
+  if(!S.garage.length) h+='<div class="ic2" style="display:block;margin-top:8px">В гараже нет машин.</div>';
+  else S.garage.forEach(function(c){h+='<div style="display:flex;align-items:center;gap:8px;background:#f5f6f8;border-radius:12px;padding:8px;margin-top:8px"><div style="width:70px;height:48px;overflow:hidden;border-radius:8px">'+carImg(c)+'</div><div style="flex:1"><b>'+c.brand+' '+c.model+'</b><div style="font-size:.75rem;color:#777">Рынок: '+fmt(c.marketPrice||calcMarketPrice(c))+' ₽</div></div><button class="btn bl" style="width:auto;margin:0" onclick="giftCar(\''+nick+'\',\''+c.id+'\')">Подарить</button></div>'});
+  h+='<button class="btn gy" onclick="this.parentElement.parentElement.remove()">Закрыть</button></div>';d.innerHTML=h;document.body.appendChild(d);
+}
+function giftMoney(nick){
+  var amount=prompt('Сколько подарить '+nick+'?','10000');if(amount===null)return;amount=Math.floor(Number(amount));
+  if(!Number.isFinite(amount)||amount<=0){toast('Введите сумму','red');return}
+  if(amount>S.money){toast('Недостаточно денег','red');return}
+  S.money-=amount;S.log.push({day:S.day,text:'🎁 Подарено '+fmt(amount)+' ₽ игроку '+nick});save();upd();toast('🎁 Подарено '+fmt(amount)+' ₽ игроку '+nick,'green');
+}
+function giftCar(nick,id){
+  var idx=-1,c=null;for(var i=0;i<S.garage.length;i++)if(S.garage[i].id===id){idx=i;c=S.garage[i];break}
+  if(idx<0||!c)return;if(!confirm('Подарить '+c.brand+' '+c.model+' игроку '+nick+'?'))return;
+  S.garage.splice(idx,1);S.log.push({day:S.day,text:'🎁 Подарена машина '+c.brand+' '+c.model+' игроку '+nick});save();upd();var m=document.getElementById('friendGiftModal');if(m)m.remove();toast('🚗 Машина подарена игроку '+nick,'green');
+}
+function renderFriends(){
+  ensureNick();var b=document.getElementById('ab');if(!b)return;
+  var online=navigator.onLine; b.innerHTML='<div class="ic2" style="display:block;background:#eaf6ff;text-align:center"><div style="font-size:2.4rem">👥</div><b style="font-size:1.15rem">Найти друзей</b><div style="margin-top:5px;color:'+(online?'#27ae60':'#e74c3c')+'">'+(online?'🌐 Интернет подключён':'❌ Нет Интернета!')+'</div></div>'+
+  '<div class="ic2" style="display:block"><div style="font-size:.8rem;color:#777">Ваш Ник</div><div style="font-size:1.15rem;font-weight:900;margin:4px 0 10px">'+S.nick+'</div><div style="font-size:.75rem;color:#777">У каждого игрока свой уникальный Ник.</div></div>'+
+  '<div class="ic2" style="display:block"><input id="friendNick" class="vin" placeholder="Введите Ник игрока" onkeydown="if(event.key===\'Enter\')friendSearch()"><button class="btn bl" onclick="friendSearch()">🔎 Найти</button></div><div id="friendResults"></div>';
+}
+function copyNick(){
+  ensureNick();
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(S.nick).then(function(){toast('📋 Ник скопирован','green')}).catch(function(){toast('Не удалось скопировать','red')});}
+  else{var t=document.createElement('textarea');t.value=S.nick;document.body.appendChild(t);t.select();try{document.execCommand('copy');toast('📋 Ник скопирован','green')}catch(e){toast('Не удалось скопировать','red')}t.remove();}
+}
+function nickExists(n){
+  n=(n||'').trim().toLowerCase();
+  if(!n)return false;
+  if((S.nick||'').toLowerCase()===n)return false;
+  return friendPlayers().some(function(x){return x.nick.toLowerCase()===n});
+}
+function openNickApp(){
+  ensureNick();var b=document.getElementById('ab');b.innerHTML='<div class="ic2" style="display:block;text-align:center"><div style="font-size:3rem">👤</div><div style="color:#777">Ваш Ник</div><div style="font-size:1.5rem;font-weight:900;margin:8px 0">'+S.nick+'</div><div style="font-size:.8rem;color:#777">Этот Ник видят другие игроки.</div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn bl" style="margin:0;flex:1" onclick="copyNick()">📋 Скопировать</button><button class="btn gy" style="margin:0;flex:1" onclick="changeNick()">✏️ Изменить Ник</button></div></div>';
+}
+function changeNick(){
+  var old=document.getElementById('nickEditModal');if(old)old.remove();
+  var d=document.createElement('div');d.id='nickEditModal';d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:130';
+  d.innerHTML='<div style="position:absolute;left:20px;right:20px;top:50%;transform:translateY(-50%);background:#fff;border-radius:20px;padding:18px;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25)"><div style="font-size:1.2rem;font-weight:900;margin-bottom:10px">✏️ Изменить Ник</div><input id="newNickInput" type="text" maxlength=24 autocomplete="off" value="" placeholder="________________" style="width:100%;box-sizing:border-box;border:0;border-bottom:2px solid #333;outline:none;font-size:1.1rem;text-align:center;padding:8px 4px;background:transparent"><div id="nickError" style="min-height:20px;color:#e74c3c;font-size:.82rem;margin-top:7px"></div><div style="display:flex;gap:8px;margin-top:8px"><button class="btn gy" style="margin:0;flex:1" onclick="document.getElementById(\'nickEditModal\').remove()">Отмена</button><button class="btn bl" style="margin:0;flex:1" onclick="saveNewNick()">ОК</button></div></div>';
+  document.body.appendChild(d);
+  var inp=document.getElementById('newNickInput');inp.focus();
+  inp.onkeydown=function(e){if(e.key==='Enter')saveNewNick();if(e.key==='Escape')d.remove()};
+}
+function saveNewNick(){
+  var el=document.getElementById('newNickInput'),err=document.getElementById('nickError');if(!el)return;
+  var n=el.value.trim().replace(/[^a-zA-Zа-яА-Я0-9_\-]/g,'');
+  if(n.length<3){err.textContent='Ник должен быть минимум 3 символа';return}
+  if(nickExists(n)){err.textContent='Этот Ник уже существует';return}
+  S.nick=n;save();var m=document.getElementById('nickEditModal');if(m)m.remove();openNickApp();toast('Ник изменён','green');
+}
+var ICONS=[
+{name:'AvtoBuy',emoji:'🚗',bg:'#f5f5f5',app:'market'},
+{name:'Гараж',emoji:'🏠',bg:'#1a4870',app:'garage'},
+{name:'ГИБДД',emoji:'🚔',bg:'#2c5aa0',app:'gibdd'},
+{name:'Недвиж.',emoji:'🏢',bg:'#2a86b8',app:'realestate'},
+{name:'П-Банк',emoji:'П',bg:'#ff6b00',app:'bank'},
+{name:'Поездки',emoji:'🗺️',bg:'#2c3e50',app:'travel'},
+{name:'Музыка',emoji:'🎵',bg:'#667eea',app:'music'},
+{name:'ТикТок',emoji:'🎬',bg:'#000',tiktok:true},
+{name:'Разраб.',emoji:'👨‍💻',bg:'#764ba2',app:'developer'},
+{name:'Промо',emoji:'🎁',bg:'#ff6b00',app:'promo'},
+{name:'Казино',emoji:'🎰',bg:'#8b0000',app:'casino'},
+{name:'Крысы',emoji:'🐀',bg:'#4a1a1a',app:'rats'},
+{name:'Блокбаст.',emoji:'🎮',bg:'#4a9eff',app:'block'},
+{name:'Будильник',emoji:'⏰',bg:'#1a1a2e',app:'alarm'},
+{name:'Календарь',emoji:'📆',bg:'#c0392b',app:'calendar'},
+{name:'Награды',emoji:'🏆',bg:'#111',app:'achievements'},
+{name:'Журнал',emoji:'📋',bg:'#f5f5f5',app:'log'},
+{name:'Чаты',emoji:'💬',bg:'#4a9eff',app:'chats'},
+{name:'Ник',emoji:'👤',bg:'#5c6bc0',app:'nick'},
+{name:'Найти друзей',emoji:'👥',bg:'#00a878',app:'friends'},
+{name:'Сон',emoji:'🌙',bg:'#0f3460',app:'sleep'},
+{name:'Настройки',emoji:'⚙️',bg:'#636366',app:'settings'}
+];
+function buildGrid(){var g=document.getElementById('grid');if(!g)return;var h='';ICONS.forEach(function(i){h+='<div class="a" onclick="'+(i.tiktok?'openTikTok()':'openApp(\''+i.app+'\')')+'"><div class="ic" style="background:'+i.bg+';color:'+(i.bg==='#f5f5f5'?'#333':'#fff')+'">'+i.emoji+'</div><div class="lb">'+i.name+'</div></div>'});g.innerHTML=h}
+
+setInterval(function(){
+if(!S.garage||S.garage.length===0)return;
+var chance=0.15+((S.rating||5.0)-4.0)*0.1;
+if(Math.random()>chance)return;
+var names=['Алексей','Дмитрий','Сергей','Иван','Максим','Андрей','Николай','Олег','Владимир','Павел','Мария','Елена'];
+var name=names[Math.floor(Math.random()*names.length)];
+var car=S.garage[Math.floor(Math.random()*S.garage.length)];
+var texts=['Привет! Увидел '+car.model+'. Ещё продаёшь?','Здравствуйте! Интересует '+car.model+'. Цена?','Хочу '+car.model+'. Заберу за '+fmt(car.sellPrice)+' ₽','Слушай, '+car.model+' ещё актуальна?','Привет! '+car.model+' в каком состоянии?','Торг возможен по '+car.model+'?','Куплю твою '+car.model+'. Когда встретимся?'];
+var text=texts[Math.floor(Math.random()*texts.length)];
+S.chats.push({id:'ch'+Date.now()+Math.random(),seller:name,carModel:car.model,messages:[{from:'them',text:text}]});
+save();toast('💬 '+name+' написал!','green');
+},5000);
+
+window._activeApp='';window._lastGameTick=Date.now();setInterval(function(){var now=Date.now(),dt=Math.max(0,Math.min(5,(now-(window._lastGameTick||now))/1000));window._lastGameTick=now;var speed=window._activeApp==='block'?2:1;var add=dt*speed/60;S.time+=add;while(S.time>=24){S.time-=24;S.day++;checkDebt();if(S.meeting&&S.day>S.meeting.day)S.meeting=null;if(S.alarm&&S.alarmDay&&S.day>S.alarmDay){S.alarm=0;S.alarmDay=0;}}save();upd()},250);
+
+if(!load()){refill();save()}
+ensureNick();
+if(!Array.isArray(S.cars)||S.cars.length<500)refill();
+if(!S.filter||typeof S.filter!=='object')S.filter={priceMin:0,priceMax:999999999,yearMin:2000,yearMax:2025,city:'all',sort:'price-asc'};
+else{
+  S.filter.priceMin=0;
+  S.filter.priceMax=999999999;
+  S.filter.yearMin=2000;
+  S.filter.yearMax=2025;
+  S.filter.city='all';
+  if(['price-asc','price-desc','year-asc','year-desc'].indexOf(S.filter.sort)<0)S.filter.sort='price-asc';
+}
+save();
+buildGrid();
+if(S.wallpaper)document.body.style.background='url('+S.wallpaper+') center/cover fixed';
+upd();
+setInterval(save,5000);
+window.addEventListener('beforeunload',save);
+document.addEventListener('visibilitychange',function(){if(document.hidden)save()});
+</script>
+</body>
+</html>
